@@ -48,8 +48,7 @@ fun App(
     var search by remember { mutableStateOf("") }
     var languageOrder by remember { mutableStateOf("en-ru") }
 
-    var languages by remember { mutableStateOf(Result.success(listOf<String>())) }
-    var lookup by remember { mutableStateOf(Result.success(Lookup(listOf()))) }
+    var lookup by remember { mutableStateOf<RequestState<Lookup>>(RequestState.Nothing()) }
 
     MaterialTheme {
         Row(
@@ -88,6 +87,7 @@ fun App(
                             .padding(10.dp),
                         onClick = {
                             currentScope.launch {
+                                lookup = RequestState.Progress()    // FIXME
                                 lookup = dictionary.lookup(languageOrder, search)
                                 logger.debug { "lookup: $lookup" }
                             }
@@ -107,28 +107,48 @@ fun App(
                     .padding(8.dp),
                 verticalArrangement = Arrangement.Top
             ) {
-                lookup.onFailure { onFailure(it) }
-                    .onSuccess {
-                        it.def.forEach { dict ->
+                when (lookup) {
+                    is RequestState.Nothing -> {}
+                    is RequestState.Progress -> {
+                        Text(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(8.dp),
+                            text = "Progress..."
+                        )
+                    }
+                    is RequestState.Success -> {
+                        val def = lookup.value?.def
+                        def?.forEach { dict ->
                             Text(
                                 modifier = Modifier.fillMaxSize()
                                     .padding(8.dp),
                                 text = dict.toString()
                             )
                         }
+                        if (def?.size == 0) {
+                            Text(
+                                modifier = Modifier.fillMaxSize()
+                                    .padding(8.dp),
+                                text = "No result"
+                            )
+                        }
                     }
+                    is RequestState.Failure ->
+                        onFailure(lookup.error)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun onFailure(error: Throwable) =
+private fun onFailure(error: DictionaryError?) =
     Text(
         modifier = Modifier
             .fillMaxSize()
             .padding(8.dp),
-        text = error.message ?: "Unknown error"
+        text = error?.message ?: "Unknown error"
     )
 
 fun main() = application {

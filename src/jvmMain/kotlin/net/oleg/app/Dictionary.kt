@@ -72,7 +72,7 @@ class Dictionary(
 
     private val logger = LoggerFactory.default.newLogger(Logger.Tag(Dictionary::class))
 
-    suspend fun getLanguages(): Result<Languages> =
+    suspend fun getLanguages(): RequestState<Languages> =
         withContext(Dispatchers.IO) {
             val url = URLBuilder(
                 protocol = PROTOCOL,
@@ -88,7 +88,7 @@ class Dictionary(
             result(response)
         }
 
-    suspend fun lookup(lang: String, text: String): Result<Lookup> =
+    suspend fun lookup(lang: String, text: String): RequestState<Lookup> =
         withContext(Dispatchers.IO) {
             val url = URLBuilder(
                 protocol = PROTOCOL,
@@ -106,11 +106,11 @@ class Dictionary(
             result(response)
         }
 
-    private suspend inline fun <reified T> result(response: HttpResponse): Result<T> =
+    private suspend inline fun <reified T> result(response: HttpResponse): RequestState<T> =
         when (response.status) {
             HttpStatusCode.OK ->
-                Result.success(response.body())
+                RequestState.Success(response.body())
             else ->
-                Result.failure(DictionaryError.from(response.status))
+                RequestState.Failure(DictionaryError.from(response.status))
         }
 }
