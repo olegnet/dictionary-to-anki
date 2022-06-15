@@ -17,14 +17,14 @@
 package net.oleg.app
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Text
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -40,69 +40,96 @@ import org.kodein.log.newLogger
 @Composable
 @Preview
 fun App(
-    viewModel: ViewModel,
+    dictionary: Dictionary,
 ) {
     val logger = LoggerFactory.default.newLogger("net.oleg.app", "MainKt")
     val currentScope = rememberCoroutineScope()
 
     var search by remember { mutableStateOf("") }
     var languageOrder by remember { mutableStateOf("en-ru") }
-//    var languages by remember { mutableStateOf<Languages>(listOf()) }
-    var lookup by remember { mutableStateOf(Lookup(listOf())) }
+
+    var languages by remember { mutableStateOf(Result.success(listOf<String>())) }
+    var lookup by remember { mutableStateOf(Result.success(Lookup(listOf()))) }
 
     MaterialTheme {
         Row(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(space = 32.dp, alignment = Alignment.CenterHorizontally),
+            horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxSize()
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(0.dp)
+                    .weight(1f)
+                    .background(color = Color.White)
                     .padding(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(space = 32.dp, alignment = Alignment.Start),
+                verticalArrangement = Arrangement.Top
             ) {
-                OutlinedTextField(
-                    modifier = Modifier
-                        .padding(end = 8.dp)
-                        .align(Alignment.Top),
-                    value = search,
-                    onValueChange = { search = it },
-                    label = @Composable { Text("Search") },
-                    singleLine = true,
-                )
 
-                Button(
+                Row(
                     modifier = Modifier
-                        .align(Alignment.Top),
-                    onClick = {
-                        currentScope.launch {
-//                        languages = viewModel.getLanguages()
-//                        logger.debug { "languages: $languages" }
-
-                            lookup = viewModel.lookup(languageOrder, search)
-                            logger.debug { "lookup: $lookup" }
-                        }
-                    }
+                        .wrapContentSize()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
                 ) {
-                    Text("Submit")
+                    OutlinedTextField(
+                        modifier = Modifier
+                            .wrapContentSize(),
+                        value = search,
+                        onValueChange = { search = it },
+                        label = @Composable { Text("Search") },
+                        singleLine = true,
+                    )
+
+                    IconButton(
+                        modifier = Modifier
+                            .padding(10.dp),
+                        onClick = {
+                            currentScope.launch {
+                                lookup = dictionary.lookup(languageOrder, search)
+                                logger.debug { "lookup: $lookup" }
+                            }
+                        }
+                    ) {
+                        Icon(imageVector = Icons.Filled.Search, contentDescription = "Search")
+                    }
                 }
             }
-/*            Text(
-                modifier = Modifier.fillMaxSize()
-                    .padding(8.dp),
-                text = languages.toString()
-            )*/
 
-            lookup.def.forEach { dict ->
-                Text(
-                    modifier = Modifier.fillMaxSize()
-                        .padding(8.dp),
-                    text = dict.toString()
-                )
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(0.dp)
+                    .weight(1f)
+                    .background(color = Color.White)
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.Top
+            ) {
+                lookup.onFailure { onFailure(it) }
+                    .onSuccess {
+                        it.def.forEach { dict ->
+                            Text(
+                                modifier = Modifier.fillMaxSize()
+                                    .padding(8.dp),
+                                text = dict.toString()
+                            )
+                        }
+                    }
             }
         }
     }
 }
+
+@Composable
+private fun onFailure(error: Throwable) =
+    Text(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp),
+        text = error.message ?: "Unknown error"
+    )
 
 fun main() = application {
     val client = HttpClient(CIO) {
@@ -115,15 +142,16 @@ fun main() = application {
             })
         }
     }
-    val viewModel = ViewModel(client)
+    val dictionary = Dictionary(client)
 
     Window(
+        title = "Dictionary",
         onCloseRequest = {
             client.close()
             exitApplication()
         },
         resizable = true,
     ) {
-        App(viewModel)
+        App(dictionary)
     }
 }

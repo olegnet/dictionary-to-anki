@@ -22,7 +22,6 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.kodein.log.Logger
@@ -54,7 +53,7 @@ data class Lookup(
     val def: List<DictionaryEntries>,
 )
 
-class ViewModel(
+class Dictionary(
     private val client: HttpClient,
 ) {
     companion object {
@@ -71,9 +70,9 @@ class ViewModel(
         private const val TEXT = "text"
     }
 
-    private val logger = LoggerFactory.default.newLogger(Logger.Tag(ViewModel::class))
+    private val logger = LoggerFactory.default.newLogger(Logger.Tag(Dictionary::class))
 
-    suspend fun getLanguages(): Languages =
+    suspend fun getLanguages(): Result<Languages> =
         withContext(Dispatchers.IO) {
             val url = URLBuilder(
                 protocol = PROTOCOL,
@@ -86,22 +85,10 @@ class ViewModel(
             val response: HttpResponse = client.get(url)
             logger.debug { "status: ${response.status}" }
 
-            when (response.status) {
-                HttpStatusCode.OK -> {
-                    val languages: Languages = response.body()
-                    logger.debug { "languages: $languages" }
-                    return@withContext languages
-                }
-                else -> {
-                    // FIXME
-                    // HttpStatusCode.Unauthorized      Invalid API key
-                    // HttpStatusCode.PaymentRequired   This API key has been blocked
-                    listOf()
-                }
-            }
+            result(response)
         }
 
-    suspend fun lookup(lang: String, text: String): Lookup =
+    suspend fun lookup(lang: String, text: String): Result<Lookup> =
         withContext(Dispatchers.IO) {
             val url = URLBuilder(
                 protocol = PROTOCOL,
@@ -116,21 +103,14 @@ class ViewModel(
             val response: HttpResponse = client.get(url)
             logger.debug { "status: ${response.status}" }
 
-            when (response.status) {
-                HttpStatusCode.OK -> {
-                    val languages: Lookup = response.body()
-                    logger.debug { "languages: $languages" }
-                    return@withContext languages
-                }
-                else -> {
-                    // FIXME
-                    // 401 Invalid API key
-                    // 402 This API key has been blocked
-                    // 403 Exceeded the daily limit on the number of requests
-                    // 413 The text size exceeds the maximum
-                    // 501 The specified translation direction is not supported
-                    Lookup(listOf())
-                }
-            }
+            result(response)
+        }
+
+    private suspend inline fun <reified T> result(response: HttpResponse): Result<T> =
+        when (response.status) {
+            HttpStatusCode.OK ->
+                Result.success(response.body())
+            else ->
+                Result.failure(DictionaryError.from(response.status))
         }
 }
