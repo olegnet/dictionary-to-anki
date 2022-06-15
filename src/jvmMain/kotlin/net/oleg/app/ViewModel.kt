@@ -28,11 +28,6 @@ import kotlinx.serialization.Serializable
 import org.kodein.log.Logger
 import org.kodein.log.LoggerFactory
 
-// FIXME
-const val KEY = ""
-
-const val URL_BASE = "https://dictionary.yandex.net/api/v1/dicservice.json"
-
 typealias Languages = List<String>
 
 @Serializable
@@ -62,19 +57,33 @@ data class Lookup(
 class ViewModel(
     private val client: HttpClient,
 ) {
+    companion object {
+        // Get one from https://yandex.com/dev/dictionary/
+        private const val KEY = YANDEX_API_KEY
+
+        private const val HOST = "dictionary.yandex.net"
+        private val PROTOCOL = URLProtocol.HTTPS
+        private val PATH = listOf("api", "v1", "dicservice.json")
+        private val GET_LANGS_PARAMS = PATH.plus("getLangs")
+        private val LOOKUP_PARAMS = PATH.plus("lookup")
+        private val KEY_PARAM = parametersOf("key", KEY)
+        private const val LANG = "lang"
+        private const val TEXT = "text"
+    }
+
     private val logger = LoggerFactory.default.newLogger(Logger.Tag(ViewModel::class))
 
-    private fun getLanguagesUrl(): String {
-        return "$URL_BASE/getLangs?key=$KEY"
-    }
-
-    private fun getLookupUrl(lang: String, text: String): String {
-        return "$URL_BASE/lookup?key=$KEY&lang=$lang&text=$text"
-    }
-
-    suspend fun getLanguages(): Languages = coroutineScope {
+    suspend fun getLanguages(): Languages =
         withContext(Dispatchers.IO) {
-            val response: HttpResponse = client.get(getLanguagesUrl())
+            val url = URLBuilder(
+                protocol = PROTOCOL,
+                host = HOST,
+                pathSegments = GET_LANGS_PARAMS,
+                parameters = KEY_PARAM
+            ).build()
+            logger.debug { "url: $url" }
+
+            val response: HttpResponse = client.get(url)
             logger.debug { "status: ${response.status}" }
 
             when (response.status) {
@@ -91,11 +100,20 @@ class ViewModel(
                 }
             }
         }
-    }
 
-    suspend fun lookup(lang: String, text: String): Lookup = coroutineScope {
+    suspend fun lookup(lang: String, text: String): Lookup =
         withContext(Dispatchers.IO) {
-            val response: HttpResponse = client.get(getLookupUrl(lang, text))
+            val url = URLBuilder(
+                protocol = PROTOCOL,
+                host = HOST,
+                pathSegments = LOOKUP_PARAMS,
+                parameters = KEY_PARAM
+                    .plus(parametersOf(LANG, lang))
+                    .plus(parametersOf(TEXT, text))
+            ).build()
+            logger.debug { "url: $url" }
+
+            val response: HttpResponse = client.get(url)
             logger.debug { "status: ${response.status}" }
 
             when (response.status) {
@@ -115,6 +133,4 @@ class ViewModel(
                 }
             }
         }
-    }
-
 }
