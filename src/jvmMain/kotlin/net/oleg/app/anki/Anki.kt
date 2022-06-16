@@ -30,13 +30,39 @@ import org.kodein.log.LoggerFactory
 
 @Serializable
 data class Request(
+    @SerialName("apiKey") val apiKey: String? = null,
     @SerialName("action") val action: String,
     @SerialName("version") val version: Int,
+    @SerialName("params") val params: Params? = null,
+)
+
+@Serializable
+data class Params(
+    @SerialName("note") val note: Note,
+)
+
+@Serializable
+data class Note(
+    @SerialName("deckName") val deckName: String,
+    @SerialName("modelName") val modelName: String,
+    @SerialName("fields") val fields: Fields,
+)
+
+@Serializable
+data class Fields(
+    @SerialName("Front") val front: String,
+    @SerialName("Back") val back: String,
 )
 
 @Serializable
 data class Response(
-    @SerialName("result") val result: Result,
+    @SerialName("result") val result: Result?,
+    @SerialName("error") val error: String?,
+)
+
+@Serializable
+data class AddNoteResponse(
+    @SerialName("result") val result: Int?,
     @SerialName("error") val error: String?,
 )
 
@@ -66,11 +92,43 @@ class Anki(
                     logger.debug { "responseJson: $responseJson" }
 
                     responseJson.error.isNullOrEmpty() &&
-                        responseJson.result.permission == "granted" &&
+                        responseJson.result?.permission == "granted" &&
                         responseJson.result.version >= 6
+                    // FIXME check responseJson.result.requireApiKey
                 }
                 else ->
                     false
+            }
+        }
+
+    suspend fun addNote(front: String, back: String) =
+        withContext(Dispatchers.IO) {
+            val response: HttpResponse = client.request(url) {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    Request(
+                        action = "addNote",
+                        version = 6,
+                        params = Params(
+                            note = Note(
+                                deckName = "mine 1",    // FIXME
+                                modelName = "Basic",
+                                fields = Fields(
+                                    front = front,
+                                    back = back
+                                )
+                            )
+                        )
+                    )
+                )
+            }
+            when (response.status) {
+                HttpStatusCode.OK -> {
+                    val responseJson: AddNoteResponse = response.body()
+                    logger.debug { "responseJson: $responseJson" }
+                }
+                else -> {
+                }
             }
         }
 }

@@ -74,14 +74,10 @@ fun App(
     }
 
     MaterialTheme(
-/*  FIXME
         colors = MaterialTheme.colors.copy(
-            primary = ,
-            secondary =
+            primary = Color(201, 208, 212),
+            secondary = Color(119, 163, 189)
         ),
-        typography = Typography(
-        )
-*/
     ) {
         Row(
             modifier = Modifier
@@ -131,7 +127,11 @@ fun App(
                 // FIXME choose languages here
             }
 
-            LookupResultColumn(lookupResult)
+            LookupResultColumn(lookupResult) { front, back ->
+                currentScope.launch {
+                    val result = anki.addNote(front, back)
+                }
+            }
         }
     }
 }
@@ -175,6 +175,7 @@ private fun ColumnScope.LookupRow(
 @Composable
 private fun RowScope.LookupResultColumn(
     lookupResult: RequestState<Lookup>,
+    addNote: (String, String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -201,7 +202,7 @@ private fun RowScope.LookupResultColumn(
                 if (def.isNullOrEmpty()) {
                     ShowNoResult()
                 } else {
-                    ShowDictionaryEntries(def)
+                    ShowDictionaryEntries(def, addNote)
                 }
             }
             is RequestState.Failure -> {
@@ -214,6 +215,7 @@ private fun RowScope.LookupResultColumn(
 @Composable
 private fun ColumnScope.ShowDictionaryEntries(
     entries: List<DictionaryEntry>,
+    addNote: (String, String) -> Unit,
 ) {
     logger.debug { "entries: $entries" }
 
@@ -267,6 +269,7 @@ private fun ColumnScope.ShowDictionaryEntries(
                     .background(backgroundColor)
                     .onPointerEvent(eventType = PointerEventType.Press, pass = PointerEventPass.Main) {
                         logger.debug { "onPointerEvent: ${dict.text} -> ${translation.text}" }
+                        addNote(dict.text, translation.text)
                     }
                     .onPreviewKeyEvent {
                         if (it.key == Key.Enter || it.key == Key.Spacebar) {
@@ -277,6 +280,7 @@ private fun ColumnScope.ShowDictionaryEntries(
                                 KeyEventType.KeyUp -> {
                                     keyPressedState.value = false
                                     logger.debug { "onPreviewKeyEvent: ${dict.text} -> ${translation.text}" }
+                                    addNote(dict.text, translation.text)
                                 }
                             }
                         }
