@@ -18,21 +18,20 @@ package net.oleg.app
 
 import io.ktor.http.*
 
-@Suppress("MemberVisibilityCanBePrivate")
 class DictionaryError private constructor(val code: Int, message: String) : Exception(message) {
     companion object {
-        const val BAD_REQUEST = 400
-        const val INVALID_API_KEY = 401
-        const val API_KEY_BLOCKED = 402
-        const val DAILY_LIMIT_EXCEEDED = 403
-        const val TEXT_SIZE_EXCEEDED = 413
-        const val UNSUPPORTED_TRANSLATION_DIRECTION = 501
+        private const val BAD_REQUEST = 400
+        private const val INVALID_API_KEY = 401
+        private const val API_KEY_BLOCKED = 402
+        private const val DAILY_LIMIT_EXCEEDED = 403
+        private const val TEXT_SIZE_EXCEEDED = 413
+        private const val UNSUPPORTED_TRANSLATION_DIRECTION = 501
 
         // FIXME messages
         fun from(httpStatusCode: HttpStatusCode): DictionaryError =
             when (val code = httpStatusCode.value) {
                 BAD_REQUEST ->
-                    DictionaryError(code, httpStatusCode.description)
+                    DictionaryError(code, "Bad request")
                 INVALID_API_KEY ->
                     DictionaryError(code, "Invalid API key")
                 API_KEY_BLOCKED ->
