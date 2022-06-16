@@ -30,6 +30,8 @@ kotlin {
 
                 implementation(compose.desktop.currentOs)
                 implementation("org.kodein.log:kodein-log:0.11.1")
+                implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.0")
+                implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.3")
                 implementation("io.ktor:ktor-client-core:$ktor_version")
                 implementation("io.ktor:ktor-client-cio:$ktor_version")

@@ -45,9 +45,12 @@ import androidx.compose.ui.window.application
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import net.oleg.app.anki.Anki
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 
@@ -55,12 +58,20 @@ val logger = LoggerFactory.default.newLogger("net.oleg.app", "MainKt")
 
 @Composable
 fun App(
+    anki: Anki,
     dictionary: Dictionary,
 ) {
     val currentScope = rememberCoroutineScope()
 
+    var ankiConnect by remember { mutableStateOf<Boolean?>(null) }
     var languageOrder by remember { mutableStateOf("en-ru") }
     var lookupResult by remember { mutableStateOf<RequestState<Lookup>>(RequestState.Nothing()) }
+
+    SideEffect {
+        currentScope.launch {
+            ankiConnect = anki.requestPermission()
+        }
+    }
 
     MaterialTheme(
 /*  FIXME
@@ -97,6 +108,24 @@ fun App(
                             lookupResult = dictionary.lookup(languageOrder, lookupString)
                         }
                     }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp),
+                        text = when (ankiConnect) {
+                            true -> "Anki is available"
+                            false -> "Anki is not available"
+                            else -> "Connecting to Anki..."
+                        }
+                    )
                 }
 
                 // FIXME choose languages here
@@ -288,15 +317,30 @@ private fun ShowNoResult() {
 
 fun main() = application {
     val client = HttpClient(CIO) {
+        // FIXME remove http logging
+        install(Logging) {
+            logger = object: Logger {
+                val _logger = LoggerFactory.default.newLogger("ktor", "logger")
+                override fun log(message: String) {
+                    _logger.debug { message }
+                }
+            }
+            level = LogLevel.ALL
+        }
         install(ContentNegotiation) {
             developmentMode = true
-            json(Json {
-                prettyPrint = true
-                isLenient = true
-                ignoreUnknownKeys = true
-            })
+            json(
+                json = Json {
+                    prettyPrint = true
+                    isLenient = true
+                    ignoreUnknownKeys = true
+                },
+                // Any json is still a json (for Anki)
+                contentType = ContentType("*", "json")
+            )
         }
     }
+    val anki = Anki(client)
     val dictionary = Dictionary(client)
 
     Window(
@@ -308,6 +352,6 @@ fun main() = application {
         },
         resizable = true,
     ) {
-        App(dictionary)
+        App(anki, dictionary)
     }
 }
