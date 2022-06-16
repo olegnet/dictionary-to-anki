@@ -16,15 +16,16 @@
 
 package net.oleg.app
 
-import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -34,21 +35,28 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import net.oleg.app.DictionaryError.Companion.BAD_REQUEST
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-@Preview
 fun App(
     dictionary: Dictionary,
 ) {
     val logger = LoggerFactory.default.newLogger("net.oleg.app", "MainKt")
     val currentScope = rememberCoroutineScope()
 
-    var search by remember { mutableStateOf("") }
     var languageOrder by remember { mutableStateOf("en-ru") }
 
-    var lookup by remember { mutableStateOf<RequestState<Lookup>>(RequestState.Nothing()) }
+    var lookupString by remember { mutableStateOf("") }
+    var lookupResult by remember { mutableStateOf<RequestState<Lookup>>(RequestState.Nothing()) }
+
+    fun lookup() = currentScope.launch {
+        lookupResult = RequestState.Progress()    // FIXME
+        lookupResult = dictionary.lookup(languageOrder, lookupString)
+        logger.debug { "lookupResult: $lookupResult" }
+    }
 
     MaterialTheme {
         Row(
@@ -75,23 +83,23 @@ fun App(
                 ) {
                     OutlinedTextField(
                         modifier = Modifier
-                            .wrapContentSize(),
-                        value = search,
-                        onValueChange = { search = it },
+                            .wrapContentSize()
+                            .onPreviewKeyEvent {
+                                if (it.key == Key.Enter && it.type == KeyEventType.KeyUp) {
+                                    lookup()
+                                }
+                                false
+                            },
+                        value = lookupString,
+                        onValueChange = { lookupString = it },
                         label = @Composable { Text("Search") },
                         singleLine = true,
-                    )
 
+                    )
                     IconButton(
                         modifier = Modifier
                             .padding(10.dp),
-                        onClick = {
-                            currentScope.launch {
-                                lookup = RequestState.Progress()    // FIXME
-                                lookup = dictionary.lookup(languageOrder, search)
-                                logger.debug { "lookup: $lookup" }
-                            }
-                        }
+                        onClick = { lookup() }
                     ) {
                         Icon(imageVector = Icons.Filled.Search, contentDescription = "Search")
                     }
@@ -107,7 +115,7 @@ fun App(
                     .padding(8.dp),
                 verticalArrangement = Arrangement.Top
             ) {
-                when (lookup) {
+                when (lookupResult) {
                     is RequestState.Nothing -> {}
                     is RequestState.Progress -> {
                         Text(
@@ -118,24 +126,26 @@ fun App(
                         )
                     }
                     is RequestState.Success -> {
-                        val def = lookup.value?.def
-                        def?.forEach { dict ->
-                            Text(
-                                modifier = Modifier.fillMaxSize()
-                                    .padding(8.dp),
-                                text = dict.toString()
-                            )
-                        }
+                        val def = lookupResult.value?.def
                         if (def?.size == 0) {
-                            Text(
-                                modifier = Modifier.fillMaxSize()
-                                    .padding(8.dp),
-                                text = "No result"
-                            )
+                            ShowNoResult()
+                        } else {
+                            def?.forEach { dict ->
+                                Text(
+                                    modifier = Modifier.fillMaxSize()
+                                        .padding(8.dp),
+                                    text = dict.toString()
+                                )
+                            }
                         }
                     }
-                    is RequestState.Failure ->
-                        onFailure(lookup.error)
+                    is RequestState.Failure -> {
+                        if (lookupResult.error?.code == BAD_REQUEST && lookupString.trim().isEmpty()) {
+                            ShowNoResult()  // FIXME message
+                        } else {
+                            ShowFailure(lookupResult.error)
+                        }
+                    }
                 }
             }
         }
@@ -143,13 +153,24 @@ fun App(
 }
 
 @Composable
-private fun onFailure(error: DictionaryError?) =
+private fun ShowFailure(error: DictionaryError?) {
     Text(
         modifier = Modifier
             .fillMaxSize()
             .padding(8.dp),
         text = error?.message ?: "Unknown error"
     )
+}
+
+@Composable
+private fun ShowNoResult() {
+    Text(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp),
+        text = "No result"
+    )
+}
 
 fun main() = application {
     val client = HttpClient(CIO) {

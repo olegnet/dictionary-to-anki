@@ -80,7 +80,7 @@ class Dictionary(
                 pathSegments = GET_LANGS_PARAMS,
                 parameters = KEY_PARAM
             ).build()
-            logger.debug { "url: $url" }
+            logUrl(url)
 
             val response: HttpResponse = client.get(url)
             logger.debug { "status: ${response.status}" }
@@ -98,13 +98,16 @@ class Dictionary(
                     .plus(parametersOf(LANG, lang))
                     .plus(parametersOf(TEXT, text))
             ).build()
-            logger.debug { "url: $url" }
+            logUrl(url)
 
             val response: HttpResponse = client.get(url)
             logger.debug { "status: ${response.status}" }
 
             result(response)
         }
+
+    private fun logUrl(url: Url) =
+        logger.debug { "url: $url".replace(KEY, "…") }
 
     private suspend inline fun <reified T> result(response: HttpResponse): RequestState<T> =
         when (response.status) {

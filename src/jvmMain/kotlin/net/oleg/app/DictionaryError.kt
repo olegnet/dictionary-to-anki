@@ -18,18 +18,33 @@ package net.oleg.app
 
 import io.ktor.http.*
 
+@Suppress("MemberVisibilityCanBePrivate")
 class DictionaryError private constructor(val code: Int, message: String) : Exception(message) {
     companion object {
+        const val BAD_REQUEST = 400
+        const val INVALID_API_KEY = 401
+        const val API_KEY_BLOCKED = 402
+        const val DAILY_LIMIT_EXCEEDED = 403
+        const val TEXT_SIZE_EXCEEDED = 413
+        const val UNSUPPORTED_TRANSLATION_DIRECTION = 501
+
+        // FIXME messages
         fun from(httpStatusCode: HttpStatusCode): DictionaryError =
-            when (httpStatusCode.value) {
-                400 -> DictionaryError(httpStatusCode.value, httpStatusCode.description)    // FIXME "Bad request"
-                401 -> DictionaryError(httpStatusCode.value, "Invalid API key")
-                402 -> DictionaryError(httpStatusCode.value, "API key has been blocked")
-                403 -> DictionaryError(httpStatusCode.value, "Exceeded the daily limit of requests")
-                413 -> DictionaryError(httpStatusCode.value, "Text size exceeded")
-                501 -> DictionaryError(httpStatusCode.value, "Translation direction is not supported")
-                else -> DictionaryError(httpStatusCode.value,
-                    "Unknown error ${httpStatusCode.value}: ${httpStatusCode.description}")
+            when (val code = httpStatusCode.value) {
+                BAD_REQUEST ->
+                    DictionaryError(code, httpStatusCode.description)
+                INVALID_API_KEY ->
+                    DictionaryError(code, "Invalid API key")
+                API_KEY_BLOCKED ->
+                    DictionaryError(code, "API key has been blocked")
+                DAILY_LIMIT_EXCEEDED ->
+                    DictionaryError(code, "Exceeded the daily limit of requests")
+                TEXT_SIZE_EXCEEDED ->
+                    DictionaryError(code, "Text size exceeded")
+                UNSUPPORTED_TRANSLATION_DIRECTION ->
+                    DictionaryError(code, "Translation direction is not supported")
+                else ->
+                    DictionaryError(code, "Unknown error $code: ${httpStatusCode.description}")
             }
     }
 }
