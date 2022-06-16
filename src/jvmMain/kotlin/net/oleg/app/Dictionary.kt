@@ -23,6 +23,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.kodein.log.Logger
 import org.kodein.log.LoggerFactory
@@ -31,26 +32,26 @@ typealias Languages = List<String>
 
 @Serializable
 data class Translations(
-    val text: String,
-    val pos: String,
-    val gen: String? = null,
-    val fr: Int? = null,
+    @SerialName("text") val text: String,
+    @SerialName("pos") val partOfSpeech: String,
+    // val gen: String? = null,
+    // val fr: Int? = null,
     //  syn     Array of synonyms
     //  mean    Array of meanings
     //  ex	    Array of examples
 )
 
 @Serializable
-data class DictionaryEntries(
-    val text: String,
-    val pos: String,
-    val ts: String? = null, // transcription
-    val tr: List<Translations>,
+data class DictionaryEntry(
+    @SerialName("text") val text: String,
+    @SerialName("pos") val partOfSpeech: String,
+    @SerialName("ts") val transcription: String?,
+    @SerialName("tr") val translations: List<Translations>,
 )
 
 @Serializable
 data class Lookup(
-    val def: List<DictionaryEntries>,
+    @SerialName("def") val dictionaryEntries: List<DictionaryEntry>,
 )
 
 class Dictionary(
