@@ -59,7 +59,7 @@ class Dictionary(
 ) {
     companion object {
         // Get one from https://yandex.com/dev/dictionary/
-        private const val KEY = YANDEX_API_KEY
+        private const val KEY: String = YANDEX_API_KEY
 
         private const val HOST = "dictionary.yandex.net"
         private val PROTOCOL = URLProtocol.HTTPS

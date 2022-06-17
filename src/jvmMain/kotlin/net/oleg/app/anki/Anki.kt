@@ -19,18 +19,18 @@ package net.oleg.app.anki
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import net.oleg.app.ANKI_API_KEY
 import org.kodein.log.Logger
 import org.kodein.log.LoggerFactory
 
 @Serializable
 data class Request(
-    @SerialName("apiKey") val apiKey: String? = null,
+    @SerialName("key") val apiKey: String? = null,
     @SerialName("action") val action: String,
     @SerialName("version") val version: Int,
     @SerialName("params") val params: Params? = null,
@@ -62,7 +62,7 @@ data class Response(
 
 @Serializable
 data class AddNoteResponse(
-    @SerialName("result") val result: Int?,
+    @SerialName("result") val result: Long?,
     @SerialName("error") val error: String?,
 )
 
@@ -76,37 +76,48 @@ data class Result(
 class Anki(
     private val client: HttpClient,
 ) {
+    companion object {
+        const val KEY: String = ANKI_API_KEY
+    }
+
     private val url: Url = URLBuilder("http://127.0.0.1:8765").build()
 
     private val logger = LoggerFactory.default.newLogger(Logger.Tag(Anki::class))
 
     suspend fun requestPermission(): Boolean =
         withContext(Dispatchers.IO) {
-            val response: HttpResponse = client.request(url) {
-                contentType(ContentType.Application.Json)
-                setBody(Request(action = "requestPermission", version = 6))
-            }
-            when (response.status) {
-                HttpStatusCode.OK -> {
-                    val responseJson: Response = response.body()
-                    logger.debug { "responseJson: $responseJson" }
-
-                    responseJson.error.isNullOrEmpty() &&
-                        responseJson.result?.permission == "granted" &&
-                        responseJson.result.version >= 6
-                    // FIXME check responseJson.result.requireApiKey
+            try {
+                val response = client.request(url) {
+                    contentType(ContentType.Application.Json)
+                    setBody(Request(action = "requestPermission", version = 6))
                 }
-                else ->
-                    false
+                when (response.status) {
+                    HttpStatusCode.OK -> {
+                        val responseJson: Response = response.body()
+                        logger.debug { "responseJson: $responseJson" }
+
+                        responseJson.error.isNullOrEmpty() &&
+                                responseJson.result?.permission == "granted" &&
+                                responseJson.result.version >= 6
+                        // FIXME check responseJson.result.requireApiKey
+                    }
+                    else ->
+                        false
+                }
+            } catch (ex: Exception) {
+                logger.error { "requestPermission: $ex" }
+                // FIXME show "connection refused" message to the user
+                false
             }
         }
 
     suspend fun addNote(front: String, back: String) =
         withContext(Dispatchers.IO) {
-            val response: HttpResponse = client.request(url) {
+            val response = client.request(url) {
                 contentType(ContentType.Application.Json)
                 setBody(
                     Request(
+                        apiKey = KEY,
                         action = "addNote",
                         version = 6,
                         params = Params(
