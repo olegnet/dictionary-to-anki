@@ -16,18 +16,13 @@
 
 package net.oleg.app
 
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowState
-import androidx.compose.ui.window.application
+import androidx.compose.ui.window.*
 import net.oleg.app.anki.Anki
 import net.oleg.app.dictionary.Dictionary
 import net.oleg.app.ui.App
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
-
-private val logger = LoggerFactory.default.newLogger("net.oleg.app", "MainKt")
 
 fun main() = application {
     // FIXME disable logging
@@ -37,7 +32,11 @@ fun main() = application {
     val dictionary = Dictionary(client)
 
     Window(
-        state = WindowState(size = DpSize(1000.dp, 800.dp)),
+        state = WindowState(
+            size = DpSize(1000.dp, 800.dp),
+            placement = WindowPlacement.Floating,
+            position = WindowPosition(alignment = Alignment.Center)
+        ),
         title = "Dictionary",
         onCloseRequest = {
             client.close()

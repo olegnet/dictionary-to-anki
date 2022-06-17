@@ -20,9 +20,14 @@ package net.oleg.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,10 +50,14 @@ fun App(
     var languageOrder by remember { mutableStateOf("en-ru") }
     var lookupResult by remember { mutableStateOf<RequestState<Lookup>>(RequestState.Nothing()) }
 
-    SideEffect {
+    fun pingAnki() {
         currentScope.launch {
             ankiConnect = anki.requestPermission()
         }
+    }
+
+    SideEffect {
+        pingAnki()
     }
 
     MaterialTheme(
@@ -88,11 +97,11 @@ fun App(
                     modifier = Modifier
                         .wrapContentWidth()
                         .padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .wrapContentSize()
                             .padding(8.dp),
                         text = when (ankiConnect) {
                             true -> "Anki is available"
@@ -100,6 +109,16 @@ fun App(
                             else -> "Connecting to Anki..."
                         }
                     )
+                    IconButton(
+                        modifier = Modifier
+                            .wrapContentSize(),
+                        onClick = {
+                            ankiConnect = null
+                            pingAnki()
+                        }
+                    ) {
+                        Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Refresh Anki status")
+                    }
                 }
 
                 // FIXME choose languages here
@@ -108,6 +127,7 @@ fun App(
             LookupResultColumn(lookupResult) { front, back ->
                 currentScope.launch {
                     val result = anki.addNote(front, back)
+                    // FIXME show progress and the result
                 }
             }
         }
