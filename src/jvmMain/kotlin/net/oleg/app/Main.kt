@@ -18,11 +18,14 @@
 
 package net.oleg.app
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -42,14 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 import net.oleg.app.anki.Anki
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
@@ -320,30 +316,9 @@ private fun ShowNoResult() {
 }
 
 fun main() = application {
-    val client = HttpClient(CIO) {
-        // FIXME remove http logging
-        install(Logging) {
-            logger = object: Logger {
-                val _logger = LoggerFactory.default.newLogger("ktor", "logger")
-                override fun log(message: String) {
-                    _logger.debug { message }
-                }
-            }
-            level = LogLevel.ALL
-        }
-        install(ContentNegotiation) {
-            developmentMode = true
-            json(
-                json = Json {
-                    prettyPrint = true
-                    isLenient = true
-                    ignoreUnknownKeys = true
-                },
-                // Any json is still a json (for Anki)
-                contentType = ContentType("*", "json")
-            )
-        }
-    }
+    // FIXME disable logging
+    val client = Network.client(enableLogging = true)
+
     val anki = Anki(client)
     val dictionary = Dictionary(client)
 
