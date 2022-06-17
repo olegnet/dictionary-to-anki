@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package net.oleg.app
+package net.oleg.app.dictionary
 
-sealed class RequestState<T>(val value: T? = null, val error: DictionaryError? = null) {
-    class Nothing<T> : RequestState<T>()
-    class Progress<T> : RequestState<T>()
-    class Success<T>(value: T) : RequestState<T>(value = value)
-    class Failure<T>(error: DictionaryError) : RequestState<T>(error = error)
-}
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class DictionaryEntry(
+    @SerialName("text") val text: String,
+    @SerialName("pos") val partOfSpeech: String,
+    @SerialName("ts") val transcription: String?,
+    @SerialName("tr") val translations: List<Translations>,
+)

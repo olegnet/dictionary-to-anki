@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.oleg.app
+package net.oleg.app.dictionary
 
 import io.ktor.http.*
 
