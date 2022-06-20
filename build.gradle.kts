@@ -24,6 +24,9 @@ kotlin {
         withJava()
     }
     sourceSets {
+        all {
+            languageSettings.optIn("kotlin.RequiresOptIn")
+        }
         val jvmMain by getting {
             dependencies {
                 val ktor_version: String by project
