@@ -55,19 +55,13 @@ data class Fields(
 )
 
 @Serializable
-data class Response(
-    @SerialName("result") val result: Result?,
+data class Response<T>(
+    @SerialName("result") val result: T?,
     @SerialName("error") val error: String?,
 )
 
 @Serializable
-data class AddNoteResponse(
-    @SerialName("result") val result: Long?,
-    @SerialName("error") val error: String?,
-)
-
-@Serializable
-data class Result(
+data class Permission(
     @SerialName("permission") val permission: String,
     @SerialName("requireApikey") val requireApiKey: Boolean,
     @SerialName("version") val version: Int,
@@ -93,7 +87,7 @@ class Anki(
                 }
                 when (response.status) {
                     HttpStatusCode.OK -> {
-                        val responseJson: Response = response.body()
+                        val responseJson: Response<Permission?> = response.body()
                         logger.debug { "responseJson: $responseJson" }
 
                         responseJson.error.isNullOrEmpty() &&
@@ -135,7 +129,7 @@ class Anki(
             }
             when (response.status) {
                 HttpStatusCode.OK -> {
-                    val responseJson: AddNoteResponse = response.body()
+                    val responseJson: Response<Long?> = response.body()
                     logger.debug { "responseJson: $responseJson" }
                 }
                 else -> {
