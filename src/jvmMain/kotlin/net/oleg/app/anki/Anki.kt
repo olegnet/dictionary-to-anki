@@ -55,8 +55,8 @@ data class Fields(
 
 @Serializable
 data class Response<T>(
-    @SerialName("result") val result: T?,
-    @SerialName("error") val error: String?,
+    @SerialName("result") val result: T? = null,
+    @SerialName("error") val error: String? = null,
 )
 
 @Serializable
@@ -65,6 +65,9 @@ data class Permission(
     @SerialName("requireApikey") val requireApiKey: Boolean,
     @SerialName("version") val version: Int,
 )
+
+typealias ModelNames = List<String>
+typealias DeckNames = List<String>
 
 class Anki(
     private val client: HttpClient,
@@ -130,6 +133,35 @@ class Anki(
                 }
                 else -> {
                 }
+            }
+        }
+
+    suspend fun getModelNames(): Response<ModelNames> =
+        getNames(action = "modelNames")
+
+    suspend fun getDeckNames(): Response<DeckNames> =
+        getNames(action = "deckNames")
+
+    private suspend fun getNames(action: String): Response<List<String>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = client.request(url) {
+                    contentType(ContentType.Application.Json)
+                    setBody(Request(apiKey = apiKey, action = action, version = 6))
+                }
+                when (response.status) {
+                    HttpStatusCode.OK -> {
+                        val responseJson: Response<List<String>> = response.body()
+                        logger.debug { "responseJson: $responseJson" }
+
+                        responseJson
+                    }
+                    else ->
+                        Response(error = "HTTP Error code ${response.status}")
+                }
+            } catch (ex: Exception) {
+                logger.error { "requestPermission: $ex" }
+                Response(error = ex.message)
             }
         }
 }

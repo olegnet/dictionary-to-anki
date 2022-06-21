@@ -43,9 +43,6 @@ fun App(
 ) {
     val currentScope = rememberCoroutineScope()
 
-    var deckName by remember { mutableStateOf(settings.deckName) }
-    var modelName by remember { mutableStateOf(settings.modelName) }
-
     var lookupResult by remember { mutableStateOf<RequestState<Lookup>>(RequestState.Nothing()) }
 
     MaterialTheme(
@@ -84,11 +81,15 @@ fun App(
                 ChooseLanguageRow(dictionary, settings)
 
                 AnkiConnectPingRow(anki)
+
+                ChooseDeskNameRow(anki, settings)
+
+                ChooseModelNameRow(anki, settings)
             }
 
             LookupResultColumn(lookupResult) { front, back ->
                 currentScope.launch {
-                    val result = anki.addNote(deckName, modelName, front, back)
+                    val result = anki.addNote(settings.deckName, settings.modelName, front, back)
                     // FIXME show progress and the result
                 }
             }

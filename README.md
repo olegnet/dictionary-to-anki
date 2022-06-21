@@ -12,6 +12,9 @@ dictionary=...
 anki=...
 ```
 
+Settings saved to `$HOME/.config/dict2anki/settings.json`
+
+
 ## License
 
     Copyright 2022 Oleg Okhotnikov

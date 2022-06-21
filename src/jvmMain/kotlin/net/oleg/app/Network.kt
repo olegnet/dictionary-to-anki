@@ -23,11 +23,11 @@ import io.ktor.client.plugins.logging.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
-import org.kodein.log.Logger.Tag
 import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 
 object Network {
-    val kodeinLogger = LoggerFactory.default.newLogger(Tag(Network::class))
+    val kodeinLogger = LoggerFactory.default.newLogger(Network::class)
 
     fun client(enableLogging: Boolean = false): HttpClient {
         return HttpClient(CIO) {

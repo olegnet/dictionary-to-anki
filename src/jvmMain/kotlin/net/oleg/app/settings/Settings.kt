@@ -40,15 +40,15 @@ class Settings private constructor(
     private var data: SettingsData
 ) {
     var translationOrder: String
-        get() = data.translationOrder ?: "en-ru"    // FIXME
+        get() = data.translationOrder ?: "en-ru"
         set(value) = save(translationOrder = value)
 
     var deckName: String
-        get() = data.deckName ?: "mine 1"           // FIXME
+        get() = data.deckName ?: "Default"
         set(value) = save(deckName = value)
 
     var modelName: String
-        get() = data.modelName ?: "Basic"           // FIXME
+        get() = data.modelName ?: "Basic"
         set(value) = save(modelName = value)
 
     private fun save(
