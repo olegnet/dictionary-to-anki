@@ -18,12 +18,10 @@
 
 package net.oleg.app.ui
 
-import androidx.compose.foundation.background
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.*
@@ -31,24 +29,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import net.oleg.app.anki.Anki
-import net.oleg.app.dictionary.Dictionary
-import net.oleg.app.dictionary.DictionaryError
-import net.oleg.app.dictionary.Lookup
-import net.oleg.app.dictionary.RequestState
+import net.oleg.app.dictionary.*
+import net.oleg.app.settings.Settings
 
 @Composable
 fun App(
     anki: Anki,
     dictionary: Dictionary,
+    settings: Settings,
 ) {
     val currentScope = rememberCoroutineScope()
 
+    var translationOrder by remember { mutableStateOf(settings.translationOrder) }
+    var deckName by remember { mutableStateOf(settings.deckName) }
+    var modelName by remember { mutableStateOf(settings.modelName) }
+
     var ankiConnect by remember { mutableStateOf<Boolean?>(null) }
-    var languageOrder by remember { mutableStateOf("en-ru") }
     var lookupResult by remember { mutableStateOf<RequestState<Lookup>>(RequestState.Nothing()) }
+    var languagesResult by remember { mutableStateOf<RequestState<Languages>>(RequestState.Nothing()) }
 
     fun pingAnki() {
         currentScope.launch {
@@ -58,6 +60,11 @@ fun App(
 
     SideEffect {
         pingAnki()
+
+        currentScope.launch {
+            languagesResult = RequestState.Progress()
+            languagesResult = dictionary.getLanguages()
+        }
     }
 
     MaterialTheme(
@@ -88,7 +95,7 @@ fun App(
                             lookupResult = RequestState.Nothing()   // FIXME add message
                         } else {
                             lookupResult = RequestState.Progress()  // FIXME move flow inside lookup fun
-                            lookupResult = dictionary.lookup(languageOrder, lookupString)
+                            lookupResult = dictionary.lookup(translationOrder, lookupString)
                         }
                     }
                 }
@@ -127,13 +134,52 @@ fun App(
                         .padding(8.dp),
                     horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
                 ) {
+                    Text(
+                        modifier = Modifier
+                            .wrapContentSize()
+                            .padding(8.dp),
+                        text = translationOrder
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .wrapContentSize()
+                            .padding(8.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.Top,
+                    ) {
+                        when (languagesResult) {
+                            is RequestState.Nothing -> {}
+                            is RequestState.Progress -> {
+                                Text(
+                                    modifier = Modifier
+                                        .wrapContentSize()
+                                        .padding(8.dp),
+                                    text = "Progress..."
+                                )
+                            }
+                            is RequestState.Success -> {
+                                languagesResult.value?.forEach {
+                                    Text(
+                                        modifier = Modifier
+                                            .wrapContentSize()
+                                            .padding(8.dp),
+                                        text = it
+                                    )
+                                }
+                            }
+                            is RequestState.Failure -> {
+                                ShowFailure(languagesResult.error)
+                            }
+                        }
+                    }
 
                 }
             }
 
             LookupResultColumn(lookupResult) { front, back ->
                 currentScope.launch {
-                    val result = anki.addNote(front, back)
+                    val result = anki.addNote(deckName, modelName, front, back)
                     // FIXME show progress and the result
                 }
             }

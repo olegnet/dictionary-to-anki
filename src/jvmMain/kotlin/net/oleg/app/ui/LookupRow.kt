@@ -16,12 +16,10 @@
 
 package net.oleg.app.ui
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -38,13 +36,13 @@ fun ColumnScope.LookupRow(
 ) {
     var lookupString by remember { mutableStateOf("") }
 
-    androidx.compose.foundation.layout.Row(
+    Row(
         modifier = Modifier
             .wrapContentSize()
             .padding(8.dp),
         horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
     ) {
-        androidx.compose.material.OutlinedTextField(
+        OutlinedTextField(
             modifier = Modifier
                 .wrapContentSize()
                 .onPreviewKeyEvent {

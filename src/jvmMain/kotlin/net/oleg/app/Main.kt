@@ -23,6 +23,7 @@ import androidx.compose.ui.window.*
 import net.oleg.app.anki.Anki
 import net.oleg.app.dictionary.Dictionary
 import net.oleg.app.settings.Keys
+import net.oleg.app.settings.Settings
 import net.oleg.app.ui.App
 
 fun main() = application {
@@ -34,6 +35,8 @@ fun main() = application {
     val anki = Anki(client, keys.anki)
     val dictionary = Dictionary(client,
         keys.dictionary ?: throw RuntimeException("Unable to found key for dictionary API"))
+
+    val settings = Settings.load()
 
     Window(
         state = WindowState(
@@ -48,6 +51,6 @@ fun main() = application {
         },
         resizable = true,
     ) {
-        App(anki, dictionary)
+        App(anki, dictionary, settings)
     }
 }

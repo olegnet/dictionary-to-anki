@@ -28,6 +28,8 @@ class Keys private constructor(
     val anki: String?,
 ) {
     companion object {
+        private const val KEYS_PATH = ".config/dict2anki/keys.properties"
+
         private val logger = LoggerFactory.default.newLogger(Keys::class)
 
         fun load(overridePath: String? = null): Keys {
@@ -39,12 +41,11 @@ class Keys private constructor(
         }
 
         private fun loadProperties(overridePath: String?): Properties {
-            val path = overridePath ?: "${System.getProperty("user.home")}/.config/dict2anki/keys.properties"
-            val file = File(path)
-            logger.debug { "file: $file" }
+            val path = overridePath ?: "${System.getProperty("user.home")}/$KEYS_PATH"
+            logger.debug { "path: $path" }
 
             val properties = Properties()
-            properties.load(file.inputStream())
+            properties.load(File(path).inputStream())
             logger.debug { "properties found: " + properties.keys.joinToString(separator = ", ") }
 
             return properties

@@ -68,7 +68,7 @@ data class Permission(
 
 class Anki(
     private val client: HttpClient,
-    private val apiKey: String?
+    private val apiKey: String?,
 ) {
     private val url: Url = URLBuilder("http://127.0.0.1:8765").build()
 
@@ -101,7 +101,7 @@ class Anki(
             }
         }
 
-    suspend fun addNote(front: String, back: String) =
+    suspend fun addNote(deckName: String, modelName: String, front: String, back: String) =
         withContext(Dispatchers.IO) {
             val response = client.request(url) {
                 contentType(ContentType.Application.Json)
@@ -112,8 +112,8 @@ class Anki(
                         version = 6,
                         params = Params(
                             note = Note(
-                                deckName = "mine 1",    // FIXME
-                                modelName = "Basic",
+                                deckName = deckName,
+                                modelName = modelName,
                                 fields = Fields(
                                     front = front,
                                     back = back
