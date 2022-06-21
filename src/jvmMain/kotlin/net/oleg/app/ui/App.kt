@@ -121,7 +121,14 @@ fun App(
                     }
                 }
 
-                // FIXME choose languages here
+                Row(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
+                ) {
+
+                }
             }
 
             LookupResultColumn(lookupResult) { front, back ->

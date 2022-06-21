@@ -22,14 +22,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import net.oleg.app.anki.Anki
 import net.oleg.app.dictionary.Dictionary
+import net.oleg.app.settings.Keys
 import net.oleg.app.ui.App
 
 fun main() = application {
+    val keys = Keys.load()
+
     // FIXME disable logging
     val client = Network.client(enableLogging = true)
 
-    val anki = Anki(client)
-    val dictionary = Dictionary(client)
+    val anki = Anki(client, keys.anki)
+    val dictionary = Dictionary(client,
+        keys.dictionary ?: throw RuntimeException("Unable to found key for dictionary API"))
 
     Window(
         state = WindowState(

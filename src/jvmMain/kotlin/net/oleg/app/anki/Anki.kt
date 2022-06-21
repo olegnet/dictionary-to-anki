@@ -24,9 +24,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.oleg.app.ANKI_API_KEY
-import org.kodein.log.Logger
 import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 
 @Serializable
 data class Request(
@@ -69,14 +68,11 @@ data class Permission(
 
 class Anki(
     private val client: HttpClient,
+    private val apiKey: String?
 ) {
-    companion object {
-        const val KEY: String = ANKI_API_KEY
-    }
-
     private val url: Url = URLBuilder("http://127.0.0.1:8765").build()
 
-    private val logger = LoggerFactory.default.newLogger(Logger.Tag(Anki::class))
+    private val logger = LoggerFactory.default.newLogger(Anki::class)
 
     suspend fun requestPermission(): Boolean =
         withContext(Dispatchers.IO) {
@@ -111,7 +107,7 @@ class Anki(
                 contentType(ContentType.Application.Json)
                 setBody(
                     Request(
-                        apiKey = KEY,
+                        apiKey = apiKey,
                         action = "addNote",
                         version = 6,
                         params = Params(

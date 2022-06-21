@@ -23,7 +23,6 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import net.oleg.app.YANDEX_API_KEY
 import org.kodein.log.Logger
 import org.kodein.log.LoggerFactory
 
@@ -31,17 +30,15 @@ typealias Languages = List<String>
 
 class Dictionary(
     private val client: HttpClient,
+    private val dictionaryKey: String,
 ) {
     companion object {
-        // Get one from https://yandex.com/dev/dictionary/
-        private const val KEY: String = YANDEX_API_KEY
-
         private const val HOST = "dictionary.yandex.net"
         private val PROTOCOL = URLProtocol.HTTPS
         private val PATH = listOf("api", "v1", "dicservice.json")
         private val GET_LANGS_PARAMS = PATH.plus("getLangs")
         private val LOOKUP_PARAMS = PATH.plus("lookup")
-        private val KEY_PARAM = parametersOf("key", KEY)
+        private const val KEY = "key"
         private const val LANG = "lang"
         private const val TEXT = "text"
     }
@@ -54,7 +51,7 @@ class Dictionary(
                 protocol = PROTOCOL,
                 host = HOST,
                 pathSegments = GET_LANGS_PARAMS,
-                parameters = KEY_PARAM
+                parameters = parametersOf("key", dictionaryKey)
             ).build()
             logUrl(url)
 
@@ -70,7 +67,7 @@ class Dictionary(
                 protocol = PROTOCOL,
                 host = HOST,
                 pathSegments = LOOKUP_PARAMS,
-                parameters = KEY_PARAM
+                parameters = parametersOf("key", dictionaryKey)
                     .plus(parametersOf(LANG, lang))
                     .plus(parametersOf(TEXT, text))
             ).build()

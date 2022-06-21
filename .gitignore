@@ -7,4 +7,3 @@ out/
 *.ipr
 .DS_Store
 local.properties
-src/jvmMain/kotlin/net/oleg/app/Key.kt
