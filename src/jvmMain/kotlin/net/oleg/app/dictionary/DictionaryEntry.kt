@@ -23,6 +23,6 @@ import kotlinx.serialization.Serializable
 data class DictionaryEntry(
     @SerialName("text") val text: String,
     @SerialName("pos") val partOfSpeech: String,
-    @SerialName("ts") val transcription: String?,
+    @SerialName("ts") val transcription: String? = null,
     @SerialName("tr") val translations: List<Translations>,
 )

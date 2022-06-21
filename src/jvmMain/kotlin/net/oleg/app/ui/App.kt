@@ -20,18 +20,19 @@ package net.oleg.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import net.oleg.app.anki.Anki
-import net.oleg.app.dictionary.*
+import net.oleg.app.dictionary.Dictionary
+import net.oleg.app.dictionary.DictionaryError
+import net.oleg.app.dictionary.Lookup
+import net.oleg.app.dictionary.RequestState
 import net.oleg.app.settings.Settings
 
 @Composable
@@ -45,16 +46,7 @@ fun App(
     var deckName by remember { mutableStateOf(settings.deckName) }
     var modelName by remember { mutableStateOf(settings.modelName) }
 
-    var ankiConnect by remember { mutableStateOf<Boolean?>(null) }
     var lookupResult by remember { mutableStateOf<RequestState<Lookup>>(RequestState.Nothing()) }
-
-    fun pingAnki() {
-        currentScope.launch {
-            ankiConnect = anki.requestPermission()
-        }
-    }
-
-    pingAnki()
 
     MaterialTheme(
         colors = MaterialTheme.colors.copy(
@@ -89,31 +81,9 @@ fun App(
                     }
                 }
 
-                Row(
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        modifier = Modifier
-                            .wrapContentSize()
-                            .padding(8.dp),
-                        text = when (ankiConnect) {
-                            true -> "Anki is available"
-                            false -> "Anki is not available"
-                            else -> "Connecting to Anki..."
-                        }
-                    )
-                    IconButton(onClick = {
-                        ankiConnect = null
-                        pingAnki()
-                    }) {
-                        Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Refresh Anki status")
-                    }
-                }
-
                 ChooseLanguageRow(dictionary, settings)
+
+                AnkiConnectPingRow(anki)
             }
 
             LookupResultColumn(lookupResult) { front, back ->

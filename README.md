@@ -4,6 +4,14 @@ It uses [Compose Multiplatform](https://github.com/JetBrains/compose-jb) for UI,
 [Dictionary API](https://yandex.com/dev/dictionary) for dictionary requests and
 [Anki-Connect](https://foosoft.net/projects/anki-connect) to connect to [Anki](https://apps.ankiweb.net) application
 
+## Configuration
+
+Keys expected to be in `$HOME/.config/dict2anki/keys.properties` file
+```
+dictionary=...
+anki=...
+```
+
 ## License
 
     Copyright 2022 Oleg Okhotnikov
