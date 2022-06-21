@@ -18,8 +18,7 @@
 
 package net.oleg.app.ui
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -29,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import net.oleg.app.anki.Anki
@@ -58,13 +56,16 @@ fun App(
         }
     }
 
-    SideEffect {
-        pingAnki()
-
+    fun loadLanguages() {
         currentScope.launch {
             languagesResult = RequestState.Progress()
             languagesResult = dictionary.getLanguages()
         }
+    }
+
+    SideEffect {
+        pingAnki()
+        loadLanguages()
     }
 
     MaterialTheme(
@@ -116,64 +117,74 @@ fun App(
                             else -> "Connecting to Anki..."
                         }
                     )
-                    IconButton(
-                        modifier = Modifier
-                            .wrapContentSize(),
-                        onClick = {
-                            ankiConnect = null
-                            pingAnki()
-                        }
-                    ) {
+                    IconButton(onClick = {
+                        ankiConnect = null
+                        pingAnki()
+                    }) {
                         Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Refresh Anki status")
                     }
                 }
 
                 Row(
                     modifier = Modifier
-                        .wrapContentWidth()
+                        .wrapContentHeight()
                         .padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         modifier = Modifier
                             .wrapContentSize()
                             .padding(8.dp),
-                        text = translationOrder
+                        text = "Translation"
                     )
-
-                    Column(
+                    var expanded by remember { mutableStateOf(false) }
+                    Box(
                         modifier = Modifier
-                            .wrapContentSize()
-                            .padding(8.dp)
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.Top,
+                            .wrapContentSize(Alignment.TopStart)
                     ) {
-                        when (languagesResult) {
-                            is RequestState.Nothing -> {}
-                            is RequestState.Progress -> {
-                                Text(
-                                    modifier = Modifier
-                                        .wrapContentSize()
-                                        .padding(8.dp),
-                                    text = "Progress..."
-                                )
-                            }
-                            is RequestState.Success -> {
-                                languagesResult.value?.forEach {
-                                    Text(
-                                        modifier = Modifier
-                                            .wrapContentSize()
-                                            .padding(8.dp),
-                                        text = it
-                                    )
+                        OutlinedButton(
+                            modifier = Modifier
+                                .wrapContentSize()
+                                .padding(8.dp),
+                            onClick = { expanded = true }
+                        ) {
+                            Text(text = translationOrder)
+                        }
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            when (languagesResult) {
+                                is RequestState.Nothing -> {}
+                                is RequestState.Progress -> {
+                                    DropdownMenuItem(onClick = { loadLanguages() }) {
+                                        Text(text = "Loading...")
+                                    }
                                 }
-                            }
-                            is RequestState.Failure -> {
-                                ShowFailure(languagesResult.error)
+                                is RequestState.Success -> {
+                                    languagesResult.value?.forEach {
+                                        DropdownMenuItem(onClick = {
+                                            translationOrder = it
+                                            settings.translationOrder = it  // FIXME
+                                            expanded = false
+                                        }) {
+                                            Text(text = it)
+                                        }
+                                    }
+                                }
+                                is RequestState.Failure -> {
+                                    // FIXME
+                                    DropdownMenuItem(onClick = { loadLanguages() }) {
+                                        ShowFailure(languagesResult.error)
+                                    }
+                                }
                             }
                         }
                     }
 
+                    IconButton(onClick = { loadLanguages() }) {
+                        Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Load available languages")
+                    }
                 }
             }
 
