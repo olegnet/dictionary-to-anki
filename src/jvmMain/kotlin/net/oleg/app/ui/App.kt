@@ -42,13 +42,11 @@ fun App(
 ) {
     val currentScope = rememberCoroutineScope()
 
-    var translationOrder by remember { mutableStateOf(settings.translationOrder) }
     var deckName by remember { mutableStateOf(settings.deckName) }
     var modelName by remember { mutableStateOf(settings.modelName) }
 
     var ankiConnect by remember { mutableStateOf<Boolean?>(null) }
     var lookupResult by remember { mutableStateOf<RequestState<Lookup>>(RequestState.Nothing()) }
-    var languagesResult by remember { mutableStateOf<RequestState<Languages>>(RequestState.Nothing()) }
 
     fun pingAnki() {
         currentScope.launch {
@@ -56,17 +54,7 @@ fun App(
         }
     }
 
-    fun loadLanguages() {
-        currentScope.launch {
-            languagesResult = RequestState.Progress()
-            languagesResult = dictionary.getLanguages()
-        }
-    }
-
-    SideEffect {
-        pingAnki()
-        loadLanguages()
-    }
+    pingAnki()
 
     MaterialTheme(
         colors = MaterialTheme.colors.copy(
@@ -96,7 +84,7 @@ fun App(
                             lookupResult = RequestState.Nothing()   // FIXME add message
                         } else {
                             lookupResult = RequestState.Progress()  // FIXME move flow inside lookup fun
-                            lookupResult = dictionary.lookup(translationOrder, lookupString)
+                            lookupResult = dictionary.lookup(settings.translationOrder, lookupString)
                         }
                     }
                 }
@@ -125,67 +113,7 @@ fun App(
                     }
                 }
 
-                Row(
-                    modifier = Modifier
-                        .wrapContentHeight()
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        modifier = Modifier
-                            .wrapContentSize()
-                            .padding(8.dp),
-                        text = "Translation"
-                    )
-                    var expanded by remember { mutableStateOf(false) }
-                    Box(
-                        modifier = Modifier
-                            .wrapContentSize(Alignment.TopStart)
-                    ) {
-                        OutlinedButton(
-                            modifier = Modifier
-                                .wrapContentSize()
-                                .padding(8.dp),
-                            onClick = { expanded = true }
-                        ) {
-                            Text(text = translationOrder)
-                        }
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            when (languagesResult) {
-                                is RequestState.Nothing -> {}
-                                is RequestState.Progress -> {
-                                    DropdownMenuItem(onClick = { loadLanguages() }) {
-                                        Text(text = "Loading...")
-                                    }
-                                }
-                                is RequestState.Success -> {
-                                    languagesResult.value?.forEach {
-                                        DropdownMenuItem(onClick = {
-                                            translationOrder = it
-                                            settings.translationOrder = it  // FIXME
-                                            expanded = false
-                                        }) {
-                                            Text(text = it)
-                                        }
-                                    }
-                                }
-                                is RequestState.Failure -> {
-                                    // FIXME
-                                    DropdownMenuItem(onClick = { loadLanguages() }) {
-                                        ShowFailure(languagesResult.error)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    IconButton(onClick = { loadLanguages() }) {
-                        Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Load available languages")
-                    }
-                }
+                ChooseLanguageRow(dictionary, settings)
             }
 
             LookupResultColumn(lookupResult) { front, back ->
