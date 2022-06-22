@@ -79,18 +79,21 @@ class Anki(
 ) {
     companion object {
         const val ANKI_CONNECT_URL = "http://127.0.0.1:8765"
+        const val API_VERSION = 6
+        const val ACTION_REQUEST_PERMISSION = "requestPermission"
+        const val ACTION_ADD_NOTE = "addNote"
     }
 
     private val url: Url = URLBuilder(ANKI_CONNECT_URL).build()
 
     private val logger = LoggerFactory.default.newLogger(Anki::class)
 
-    suspend fun requestPermission(): Boolean =
+    suspend fun requestPermission(): Response<Boolean> =
         withContext(Dispatchers.IO) {
             try {
                 val response = client.request(url) {
                     contentType(ContentType.Application.Json)
-                    setBody(Request(action = "requestPermission", version = 6))
+                    setBody(Request(action = ACTION_REQUEST_PERMISSION, version = API_VERSION))
                 }
                 when (response.status) {
                     HttpStatusCode.OK -> {
@@ -100,47 +103,54 @@ class Anki(
                         responseJson.error.isNullOrEmpty() &&
                                 responseJson.result?.permission == "granted" &&
                                 responseJson.result.version >= 6
-                        // FIXME check responseJson.result.requireApiKey
+
+                        Response(result = true)
                     }
                     else ->
-                        false
+                        Response(error = "HTTP Error code ${response.status}")
                 }
             } catch (ex: Exception) {
                 logger.error { "requestPermission: $ex" }
-                // FIXME show "connection refused" message to the user
-                false
+                Response(error = ex.message)
             }
         }
 
-    suspend fun addNote(deckName: String, modelName: String, front: String, back: String) =
+    suspend fun addNote(deckName: String, modelName: String, front: String, back: String): Response<Long?> =
         withContext(Dispatchers.IO) {
-            val response = client.request(url) {
-                contentType(ContentType.Application.Json)
-                setBody(
-                    Request(
-                        apiKey = apiKey,
-                        action = "addNote",
-                        version = 6,
-                        params = Params(
-                            note = Note(
-                                deckName = deckName,
-                                modelName = modelName,
-                                fields = Fields(
-                                    front = front,
-                                    back = back
+            try {
+                val response = client.request(url) {
+                    contentType(ContentType.Application.Json)
+                    setBody(
+                        Request(
+                            apiKey = apiKey,
+                            action = ACTION_ADD_NOTE,
+                            version = API_VERSION,
+                            params = Params(
+                                note = Note(
+                                    deckName = deckName,
+                                    modelName = modelName,
+                                    fields = Fields(
+                                        front = front,
+                                        back = back
+                                    )
                                 )
                             )
                         )
                     )
-                )
-            }
-            when (response.status) {
-                HttpStatusCode.OK -> {
-                    val responseJson: Response<Long?> = response.body()
-                    logger.debug { "responseJson: $responseJson" }
                 }
-                else -> {
+                when (response.status) {
+                    HttpStatusCode.OK -> {
+                        val responseJson: Response<Long?> = response.body()
+                        logger.debug { "responseJson: $responseJson" }
+
+                        responseJson
+                    }
+                    else ->
+                        Response(error = "HTTP Error code ${response.status}")
                 }
+            } catch (ex: Exception) {
+                logger.error { "addNote: $ex" }
+                Response(error = ex.message)
             }
         }
 
@@ -149,7 +159,7 @@ class Anki(
             try {
                 val response = client.request(url) {
                     contentType(ContentType.Application.Json)
-                    setBody(Request(apiKey = apiKey, action = action, version = 6))
+                    setBody(Request(apiKey = apiKey, action = action, version = API_VERSION))
                 }
                 when (response.status) {
                     HttpStatusCode.OK -> {
@@ -162,7 +172,7 @@ class Anki(
                         Response(error = "HTTP Error code ${response.status}")
                 }
             } catch (ex: Exception) {
-                logger.error { "requestPermission: $ex" }
+                logger.error { "getNames: $ex" }
                 Response(error = ex.message)
             }
         }

@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import net.oleg.app.anki.Anki
+import net.oleg.app.anki.Response
 
 @Composable
 fun ColumnScope.AnkiConnectPingRow(
@@ -35,11 +36,11 @@ fun ColumnScope.AnkiConnectPingRow(
 ) {
     val currentScope = rememberCoroutineScope()
 
-    var ankiConnect by remember { mutableStateOf<Boolean?>(null) }
+    var ankiConnectResponse by remember { mutableStateOf<Response<Boolean>?>(null) }
 
     fun pingAnki() {
         currentScope.launch {
-            ankiConnect = anki.requestPermission()
+            ankiConnectResponse = anki.requestPermission()
         }
     }
 
@@ -53,18 +54,30 @@ fun ColumnScope.AnkiConnectPingRow(
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            modifier = Modifier
-                .wrapContentSize()
-                .padding(8.dp),
-            text = when (ankiConnect) {
-                true -> "Anki is available"
-                false -> "Anki is not available"
-                else -> "Connecting to Anki..."
-            }
-        )
+        ankiConnectResponse?.result.apply {
+            Text(
+                modifier = Modifier
+                    .wrapContentSize()
+                    .padding(8.dp),
+                text = when (this) {
+                    true -> "Anki is available"
+                    false -> "Anki is not available"    // Never happen, showing 'error' instead
+                    else -> "Connecting to Anki..."
+                }
+            )
+        }
+
+        ankiConnectResponse?.error?.apply {
+            Text(
+                modifier = Modifier
+                    .wrapContentSize()
+                    .padding(8.dp),
+                text = this
+            )
+        }
+
         IconButton(onClick = {
-            ankiConnect = null
+            ankiConnectResponse = null
             pingAnki()
         }) {
             Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Refresh Anki status")
