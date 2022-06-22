@@ -68,6 +68,7 @@ data class Permission(
 
 typealias ItemNamesList = List<String>
 
+@Suppress("EnumEntryName")
 enum class ItemNames {
     modelNames,
     deckNames
@@ -88,7 +89,7 @@ class Anki(
 
     private val logger = LoggerFactory.default.newLogger(Anki::class)
 
-    suspend fun requestPermission(): Response<Boolean> =
+    suspend fun requestPermission(): AnkiResponseState<Any?> =
         withContext(Dispatchers.IO) {
             try {
                 val response = client.request(url) {
@@ -100,18 +101,21 @@ class Anki(
                         val responseJson: Response<Permission?> = response.body()
                         logger.debug { "responseJson: $responseJson" }
 
-                        responseJson.error.isNullOrEmpty() &&
-                                responseJson.result?.permission == "granted" &&
-                                responseJson.result.version >= 6
+                        if (responseJson.error.isNullOrEmpty() &&
+                            responseJson.result?.permission == "granted" &&
+                            responseJson.result.version >= 6) {
 
-                        Response(result = true)
+                            AnkiResponseState.Result(null)
+                        } else {
+                            AnkiResponseState.Error(error = "Something wrong with Anki Connect response")
+                        }
                     }
                     else ->
-                        Response(error = "HTTP Error code ${response.status}")
+                        AnkiResponseState.Error(error = "HTTP Error code ${response.status}")
                 }
             } catch (ex: Exception) {
                 logger.error { "requestPermission: $ex" }
-                Response(error = ex.message)
+                AnkiResponseState.Error(error = ex.message ?: ex.stackTraceToString())
             }
         }
 

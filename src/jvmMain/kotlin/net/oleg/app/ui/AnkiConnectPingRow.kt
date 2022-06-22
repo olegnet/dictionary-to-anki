@@ -28,7 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import net.oleg.app.anki.Anki
-import net.oleg.app.anki.Response
+import net.oleg.app.anki.AnkiResponseState
 
 @Composable
 fun ColumnScope.AnkiConnectPingRow(
@@ -36,10 +36,17 @@ fun ColumnScope.AnkiConnectPingRow(
 ) {
     val currentScope = rememberCoroutineScope()
 
-    var ankiConnectResponse by remember { mutableStateOf<Response<Boolean>?>(null) }
+    var ankiConnectResponse by remember { mutableStateOf<AnkiResponseState<Any?>>(AnkiResponseState.Init) }
+    val message = when (val response = ankiConnectResponse) {
+        AnkiResponseState.Init -> ""
+        AnkiResponseState.Progress -> "Connecting to Anki..."
+        is AnkiResponseState.Result -> "Anki is available"
+        is AnkiResponseState.Error -> "Anki is not available: ${response.error}"
+    }
 
     fun pingAnki() {
         currentScope.launch {
+            ankiConnectResponse = AnkiResponseState.Progress
             ankiConnectResponse = anki.requestPermission()
         }
     }
@@ -54,32 +61,13 @@ fun ColumnScope.AnkiConnectPingRow(
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        ankiConnectResponse?.result.apply {
-            Text(
-                modifier = Modifier
-                    .wrapContentSize()
-                    .padding(8.dp),
-                text = when (this) {
-                    true -> "Anki is available"
-                    false -> "Anki is not available"    // Never happen, showing 'error' instead
-                    else -> "Connecting to Anki..."
-                }
-            )
-        }
-
-        ankiConnectResponse?.error?.apply {
-            Text(
-                modifier = Modifier
-                    .wrapContentSize()
-                    .padding(8.dp),
-                text = this
-            )
-        }
-
-        IconButton(onClick = {
-            ankiConnectResponse = null
-            pingAnki()
-        }) {
+        Text(
+            modifier = Modifier
+                .wrapContentSize()
+                .padding(8.dp),
+            text = message
+        )
+        IconButton(onClick = { pingAnki() }) {
             Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Refresh Anki status")
         }
     }
