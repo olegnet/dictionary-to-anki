@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import net.oleg.app.anki.Anki
+import net.oleg.app.anki.ItemNames
 import net.oleg.app.dictionary.Dictionary
 import net.oleg.app.dictionary.DictionaryError
 import net.oleg.app.dictionary.Lookup
@@ -82,9 +83,13 @@ fun App(
 
                 AnkiConnectPingRow(anki)
 
-                ChooseDeskNameRow(anki, settings)
+                ChooseItemNameRow(anki, ItemNames.deckNames, "Deck name", settings.deckName) {
+                    settings.deckName = it
+                }
 
-                ChooseModelNameRow(anki, settings)
+                ChooseItemNameRow(anki, ItemNames.modelNames, "Model name", settings.modelName) {
+                    settings.modelName = it
+                }
             }
 
             LookupResultColumn(lookupResult) { front, back ->

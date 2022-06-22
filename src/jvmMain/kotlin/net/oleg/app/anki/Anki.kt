@@ -66,14 +66,22 @@ data class Permission(
     @SerialName("version") val version: Int,
 )
 
-typealias ModelNames = List<String>
-typealias DeckNames = List<String>
+typealias ItemNamesList = List<String>
+
+enum class ItemNames {
+    modelNames,
+    deckNames
+}
 
 class Anki(
     private val client: HttpClient,
     private val apiKey: String?,
 ) {
-    private val url: Url = URLBuilder("http://127.0.0.1:8765").build()
+    companion object {
+        const val ANKI_CONNECT_URL = "http://127.0.0.1:8765"
+    }
+
+    private val url: Url = URLBuilder(ANKI_CONNECT_URL).build()
 
     private val logger = LoggerFactory.default.newLogger(Anki::class)
 
@@ -136,13 +144,7 @@ class Anki(
             }
         }
 
-    suspend fun getModelNames(): Response<ModelNames> =
-        getNames(action = "modelNames")
-
-    suspend fun getDeckNames(): Response<DeckNames> =
-        getNames(action = "deckNames")
-
-    private suspend fun getNames(action: String): Response<List<String>> =
+    suspend fun getNames(action: String): Response<ItemNamesList> =
         withContext(Dispatchers.IO) {
             try {
                 val response = client.request(url) {
@@ -151,7 +153,7 @@ class Anki(
                 }
                 when (response.status) {
                     HttpStatusCode.OK -> {
-                        val responseJson: Response<List<String>> = response.body()
+                        val responseJson: Response<ItemNamesList> = response.body()
                         logger.debug { "responseJson: $responseJson" }
 
                         responseJson

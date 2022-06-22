@@ -27,23 +27,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import net.oleg.app.anki.Anki
-import net.oleg.app.anki.DeckNames
+import net.oleg.app.anki.ItemNames
+import net.oleg.app.anki.ItemNamesList
 import net.oleg.app.anki.Response
-import net.oleg.app.settings.Settings
 
 @Composable
-fun ColumnScope.ChooseDeskNameRow(
+fun ColumnScope.ChooseItemNameRow(
     anki: Anki,
-    settings: Settings,
+    itemNames: ItemNames,
+    header: String,
+    itemInitValue: String,
+    updateSettings: (newItemValue: String) -> Unit
 ) {
     val currentScope = rememberCoroutineScope()
 
-    var deckName by remember { mutableStateOf(settings.deckName) }
-    var deckNamesResponse by remember { mutableStateOf<Response<DeckNames>>(Response()) }
+    var itemName by remember { mutableStateOf(itemInitValue) }
+    var itemNamesResponse by remember { mutableStateOf<Response<ItemNamesList>>(Response()) }
 
-    fun getDeckNames() {
+    fun getItemNames() {
         currentScope.launch {
-            deckNamesResponse = anki.getDeckNames()
+            itemNamesResponse = anki.getNames(itemNames.name)
         }
     }
 
@@ -57,10 +60,10 @@ fun ColumnScope.ChooseDeskNameRow(
             modifier = Modifier
                 .wrapContentSize()
                 .padding(8.dp),
-            text = "Deck name"
+            text = header
         )
 
-        deckNamesResponse.error?.apply {
+        itemNamesResponse.error?.apply {
             Text(
                 modifier = Modifier
                     .wrapContentSize()
@@ -79,20 +82,20 @@ fun ColumnScope.ChooseDeskNameRow(
                     .wrapContentSize()
                     .padding(8.dp),
                 onClick = {
-                    getDeckNames()
+                    getItemNames()
                     expanded = true
                 }
             ) {
-                Text(text = deckName)
+                Text(text = itemName)
             }
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                deckNamesResponse.result?.forEach {
+                itemNamesResponse.result?.forEach {
                     DropdownMenuItem(onClick = {
-                        deckName = it
-                        settings.deckName = it
+                        itemName = it
+                        updateSettings(it)
                         expanded = false
                     }) {
                         Text(text = it)
