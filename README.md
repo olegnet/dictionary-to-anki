@@ -6,14 +6,24 @@ It uses [Compose Multiplatform](https://github.com/JetBrains/compose-jb) for UI,
 
 ## Configuration
 
-Keys expected to be in `$HOME/.config/dict2anki/keys.properties` file
-```
-dictionary=...
-anki=...
-```
+Keys are expected to be in `$HOME/.config/dict2anki/keys.properties` file
 
-Settings saved to `$HOME/.config/dict2anki/settings.json`
+`dictionary=...` [your key from https://yandex.com/dev/dictionary/](https://yandex.com/dev/dictionary/)
 
+`anki=...`       [optional key for Anki Connect](https://foosoft.net/projects/anki-connect/)
+
+
+Settings are saved to `$HOME/.config/dict2anki/settings.json`
+
+## Notes for MacOS Users from Anki Connect documentation
+
+Don't forget to run this commands once and restart Anki
+
+```
+defaults write net.ankiweb.dtop NSAppSleepDisabled -bool true
+defaults write net.ichi2.anki NSAppSleepDisabled -bool true
+defaults write org.qt-project.Qt.QtWebEngineCore NSAppSleepDisabled -bool true
+```
 
 ## License
 
