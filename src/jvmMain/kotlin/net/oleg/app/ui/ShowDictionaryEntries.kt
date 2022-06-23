@@ -16,10 +16,12 @@
 
 package net.oleg.app.ui
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
-import androidx.compose.foundation.focusable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
@@ -34,9 +36,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.key.*
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
 import net.oleg.app.dictionary.DictionaryEntry
 import org.kodein.log.LoggerFactory
@@ -85,14 +84,19 @@ fun ColumnScope.ShowDictionaryEntries(
         dict.translations.forEach { translation ->
             val keyPressedState = remember { mutableStateOf(false) }
             val interactionSource = remember { MutableInteractionSource() }
-            val backgroundColor = if (interactionSource.collectIsFocusedAsState().value) {
-                if (keyPressedState.value)
-                    lerp(MaterialTheme.colors.secondary, Color(64, 64, 64), 0.3f)
-                else
+            val backgroundColor =
+                if (interactionSource.collectIsHoveredAsState().value) {
                     MaterialTheme.colors.secondary
-            } else {
-                MaterialTheme.colors.primary
-            }
+                } else {
+                    if (interactionSource.collectIsFocusedAsState().value) {
+                        if (keyPressedState.value)
+                            lerp(MaterialTheme.colors.secondary, Color(64, 64, 64), 0.3f)
+                        else
+                            MaterialTheme.colors.secondary
+                    } else {
+                        MaterialTheme.colors.primary
+                    }
+                }
 
             Box(
                 modifier = Modifier
@@ -100,10 +104,6 @@ fun ColumnScope.ShowDictionaryEntries(
                     .clip(RoundedCornerShape(4.dp))
                     .fillMaxWidth()
                     .background(backgroundColor)
-                    .onPointerEvent(eventType = PointerEventType.Press, pass = PointerEventPass.Main) {
-                        logger.debug { "onPointerEvent: ${dict.text} -> ${translation.text}" }
-                        addNote(dict.text, translation.text)
-                    }
                     .onPreviewKeyEvent {
                         if (it.key == Key.Enter || it.key == Key.Spacebar) {
                             when (it.type) {
@@ -119,7 +119,14 @@ fun ColumnScope.ShowDictionaryEntries(
                         }
                         false
                     }
-                    .focusable(interactionSource = interactionSource),
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = LocalIndication.current,
+                        onClick = {
+                            logger.debug { "onClick: ${dict.text} -> ${translation.text}" }
+                            addNote(dict.text, translation.text)
+                        },
+                    ),
                 contentAlignment = Alignment.TopStart
             ) {
                 Text(
