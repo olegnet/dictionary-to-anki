@@ -83,6 +83,7 @@ class Anki(
         const val API_VERSION = 6
         const val ACTION_REQUEST_PERMISSION = "requestPermission"
         const val ACTION_ADD_NOTE = "addNote"
+        const val PERMISSION_GRANTED = "granted"
     }
 
     private val url: Url = URLBuilder(ANKI_CONNECT_URL).build()
@@ -102,8 +103,8 @@ class Anki(
                         logger.debug { "responseJson: $responseJson" }
 
                         if (responseJson.error.isNullOrEmpty() &&
-                            responseJson.result?.permission == "granted" &&
-                            responseJson.result.version >= 6) {
+                            responseJson.result?.permission == PERMISSION_GRANTED &&
+                            responseJson.result.version >= API_VERSION) {
 
                             AnkiResponseState.Result(null)
                         } else {
