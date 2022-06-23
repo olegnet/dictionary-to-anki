@@ -20,6 +20,8 @@ package net.oleg.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -64,16 +66,17 @@ fun App(
                     .width(0.dp)
                     .weight(1f)
                     .background(color = Color.White)
-                    .padding(8.dp),
+                    .padding(8.dp)
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.Top,
             ) {
 
                 LookupRow { lookupString ->
                     currentScope.launch {
                         if (lookupString.trim().isEmpty()) {
-                            lookupResult = RequestState.Nothing()   // FIXME add message
+                            lookupResult = RequestState.Nothing()
                         } else {
-                            lookupResult = RequestState.Progress()  // FIXME move flow inside lookup fun
+                            lookupResult = RequestState.Progress()
                             lookupResult = dictionary.lookup(settings.translationOrder, lookupString)
                         }
                     }
