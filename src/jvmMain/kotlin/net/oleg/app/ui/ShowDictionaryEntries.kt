@@ -26,9 +26,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -37,7 +35,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import net.oleg.app.anki.Anki
+import net.oleg.app.anki.Response
 import net.oleg.app.dictionary.DictionaryEntry
+import net.oleg.app.settings.Settings
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 
@@ -46,10 +48,51 @@ private val logger = LoggerFactory.default.newLogger("net.oleg.app.ui", "ShowDic
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ColumnScope.ShowDictionaryEntries(
+    anki: Anki,
+    settings: Settings,
     entries: List<DictionaryEntry>,
-    addNote: (String, String) -> Unit,
 ) {
-    logger.debug { "entries: $entries" }
+    val currentScope = rememberCoroutineScope()
+    var addNoteResult by remember { mutableStateOf<Response<Long?>>(Response()) }
+
+    val message: String
+    val messageColor: Color
+
+    // FIXME colors
+    if (addNoteResult.result != null) {
+        message = "Added new note"
+        messageColor = Color.Green
+    } else {
+        val error = addNoteResult.error
+        if (error != null) {
+            message = error
+            messageColor = Color.Red
+        } else {
+            message = ""
+            messageColor = Color.Transparent
+        }
+    }
+
+    fun addNote(front: String, back: String) {
+        currentScope.launch {
+            addNoteResult = anki.addNote(settings.deckName, settings.modelName, front, back)
+        }
+    }
+
+    Row(
+        modifier = Modifier
+            .wrapContentSize()
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.Start,
+    ) {
+        Text(
+            modifier = Modifier
+                .wrapContentSize()
+                .padding(start = 4.dp),
+            text = message,
+            color = messageColor
+        )
+    }
 
     entries.forEach { dict ->
         Row(

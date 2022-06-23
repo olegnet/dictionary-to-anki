@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalComposeUiApi::class)
-
 package net.oleg.app.ui
 
 import androidx.compose.foundation.background
@@ -25,7 +23,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -95,12 +92,7 @@ fun App(
                 }
             }
 
-            LookupResultColumn(lookupResult) { front, back ->
-                currentScope.launch {
-                    val result = anki.addNote(settings.deckName, settings.modelName, front, back)
-                    // FIXME show progress and the result
-                }
-            }
+            LookupResultColumn(anki, settings, lookupResult)
         }
     }
 }

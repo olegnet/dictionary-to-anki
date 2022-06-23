@@ -25,13 +25,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import net.oleg.app.anki.Anki
 import net.oleg.app.dictionary.Lookup
 import net.oleg.app.dictionary.RequestState
+import net.oleg.app.settings.Settings
 
 @Composable
 fun RowScope.LookupResultColumn(
+    anki: Anki,
+    settings: Settings,
     lookupResult: RequestState<Lookup>,
-    addNote: (String, String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -58,7 +61,7 @@ fun RowScope.LookupResultColumn(
                 if (def.isNullOrEmpty()) {
                     ShowNoResult()
                 } else {
-                    ShowDictionaryEntries(def, addNote)
+                    ShowDictionaryEntries(anki, settings, def)
                 }
             }
             is RequestState.Failure -> {
