@@ -16,9 +16,12 @@
 
 package net.oleg.app.dictionary
 
-sealed class RequestState<T>(val value: T? = null, val error: DictionaryError? = null) {
-    class Nothing<T> : RequestState<T>()
-    class Progress<T> : RequestState<T>()
-    class Success<T>(value: T) : RequestState<T>(value = value)
-    class Failure<T>(error: DictionaryError) : RequestState<T>(error = error)
+sealed class DictionaryResponse<out T> {
+    object Init : DictionaryResponse<Nothing>()
+
+    object Progress : DictionaryResponse<Nothing>()
+
+    class Result<out T>(val value: T) : DictionaryResponse<T>()
+
+    class Error(val error: String) : DictionaryResponse<Nothing>()
 }

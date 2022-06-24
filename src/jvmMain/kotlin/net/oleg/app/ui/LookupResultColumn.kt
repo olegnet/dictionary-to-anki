@@ -18,23 +18,21 @@ package net.oleg.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import net.oleg.app.anki.Anki
+import net.oleg.app.dictionary.DictionaryResponse
 import net.oleg.app.dictionary.Lookup
-import net.oleg.app.dictionary.RequestState
 import net.oleg.app.settings.Settings
 
 @Composable
 fun RowScope.LookupResultColumn(
     anki: Anki,
     settings: Settings,
-    lookupResult: RequestState<Lookup>,
+    lookupResult: DictionaryResponse<Lookup>,
 ) {
     Column(
         modifier = Modifier
@@ -46,26 +44,31 @@ fun RowScope.LookupResultColumn(
         verticalArrangement = Arrangement.Top,
     ) {
         when (lookupResult) {
-            is RequestState.Nothing -> {}
-            is RequestState.Progress -> {
-                Text(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(8.dp),
-                    text = "Progress..."
-                )
+            is DictionaryResponse.Init -> {}
+            is DictionaryResponse.Progress -> {
+                ShowMessage("Progress...")
             }
-            is RequestState.Success -> {
-                val def = lookupResult.value?.dictionaryEntries
-                if (def.isNullOrEmpty()) {
-                    ShowNoResult()
+            is DictionaryResponse.Result -> {
+                val entries = lookupResult.value.dictionaryEntries
+                if (entries.isNotEmpty()) {
+                    ShowDictionaryEntries(anki, settings, entries)
                 } else {
-                    ShowDictionaryEntries(anki, settings, def)
+                    ShowMessage("No result")
                 }
             }
-            is RequestState.Failure -> {
-                ShowFailure(lookupResult.error)
+            is DictionaryResponse.Error -> {
+                ShowMessage(lookupResult.error)
             }
         }
     }
+}
+
+@Composable
+private fun ShowMessage(message: String) {
+    Text(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp),
+        text = message
+    )
 }

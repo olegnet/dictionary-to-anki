@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,9 +29,8 @@ import kotlinx.coroutines.launch
 import net.oleg.app.anki.Anki
 import net.oleg.app.anki.ItemNames
 import net.oleg.app.dictionary.Dictionary
-import net.oleg.app.dictionary.DictionaryError
+import net.oleg.app.dictionary.DictionaryResponse
 import net.oleg.app.dictionary.Lookup
-import net.oleg.app.dictionary.RequestState
 import net.oleg.app.settings.Settings
 
 @Composable
@@ -42,10 +40,10 @@ fun App(
     settings: Settings,
 ) {
     val currentScope = rememberCoroutineScope()
-
-    var lookupResult by remember { mutableStateOf<RequestState<Lookup>>(RequestState.Nothing()) }
+    var lookupResult by remember { mutableStateOf<DictionaryResponse<Lookup>>(DictionaryResponse.Init) }
 
     MaterialTheme(
+        // FIXME colors
         colors = MaterialTheme.colors.copy(
             primary = Color(201, 208, 212),
             secondary = Color(119, 163, 189)
@@ -67,13 +65,12 @@ fun App(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.Top,
             ) {
-
                 LookupRow { lookupString ->
                     currentScope.launch {
                         if (lookupString.trim().isEmpty()) {
-                            lookupResult = RequestState.Nothing()
+                            lookupResult = DictionaryResponse.Init
                         } else {
-                            lookupResult = RequestState.Progress()
+                            lookupResult = DictionaryResponse.Progress
                             lookupResult = dictionary.lookup(settings.translationOrder, lookupString)
                         }
                     }
@@ -95,24 +92,4 @@ fun App(
             LookupResultColumn(anki, settings, lookupResult)
         }
     }
-}
-
-@Composable
-fun ShowFailure(error: DictionaryError?) {
-    Text(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp),
-        text = error?.message ?: "Unknown error"
-    )
-}
-
-@Composable
-fun ShowNoResult() {
-    Text(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp),
-        text = "No result"
-    )
 }

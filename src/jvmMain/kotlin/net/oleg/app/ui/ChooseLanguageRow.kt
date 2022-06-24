@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import net.oleg.app.dictionary.Dictionary
 import net.oleg.app.dictionary.Languages
-import net.oleg.app.dictionary.RequestState
+import net.oleg.app.dictionary.DictionaryResponse
 import net.oleg.app.settings.Settings
 
 @Composable
@@ -38,11 +38,11 @@ fun ColumnScope.ChooseLanguageRow(
     val currentScope = rememberCoroutineScope()
 
     var translationOrder by remember { mutableStateOf(settings.translationOrder) }
-    var languagesResult by remember { mutableStateOf<RequestState<Languages>>(RequestState.Nothing()) }
+    var languagesResult by remember { mutableStateOf<DictionaryResponse<Languages>>(DictionaryResponse.Init) }
 
     fun loadLanguages() {
         currentScope.launch {
-            languagesResult = RequestState.Progress()
+            languagesResult = DictionaryResponse.Progress
             languagesResult = dictionary.getLanguages()
         }
     }
@@ -81,29 +81,13 @@ fun ColumnScope.ChooseLanguageRow(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                when (languagesResult) {
-                    is RequestState.Nothing -> {}
-                    is RequestState.Progress -> {
-                        DropdownMenuItem(onClick = {}) {
-                            Text(text = "Loading...")
-                        }
-                    }
-                    is RequestState.Success -> {
-                        languagesResult.value?.forEach {
-                            DropdownMenuItem(onClick = {
-                                translationOrder = it
-                                settings.translationOrder = it
-                                expanded = false
-                            }) {
-                                Text(text = it)
-                            }
-                        }
-                    }
-                    is RequestState.Failure -> {
-                        // FIXME
-                        DropdownMenuItem(onClick = {}) {
-                            ShowFailure(languagesResult.error)
-                        }
+                (languagesResult as? DictionaryResponse.Result)?.value?.forEach {
+                    DropdownMenuItem(onClick = {
+                        translationOrder = it
+                        settings.translationOrder = it
+                        expanded = false
+                    }) {
+                        Text(text = it)
                     }
                 }
             }
@@ -111,6 +95,17 @@ fun ColumnScope.ChooseLanguageRow(
 
         IconButton(onClick = { loadLanguages() }) {
             Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Load available languages")
+        }
+
+        if (languagesResult is DictionaryResponse.Progress) {
+            Text(text = "Loading...")
+        } else if (languagesResult is DictionaryResponse.Error) {
+            Text(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                text = (languagesResult as DictionaryResponse.Error).error
+            )
         }
     }
 }

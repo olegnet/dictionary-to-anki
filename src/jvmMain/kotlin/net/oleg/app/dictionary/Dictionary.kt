@@ -19,12 +19,9 @@ package net.oleg.app.dictionary
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.kodein.log.Logger
-import org.kodein.log.LoggerFactory
 
 typealias Languages = List<String>
 
@@ -43,50 +40,44 @@ class Dictionary(
         private const val TEXT = "text"
     }
 
-    private val logger = LoggerFactory.default.newLogger(Logger.Tag(Dictionary::class))
-
-    suspend fun getLanguages(): RequestState<Languages> =
+    suspend fun getLanguages(): DictionaryResponse<Languages> =
         withContext(Dispatchers.IO) {
             val url = URLBuilder(
                 protocol = PROTOCOL,
                 host = HOST,
                 pathSegments = GET_LANGS_PARAMS,
-                parameters = parametersOf("key", dictionaryKey)
+                parameters = parametersOf(KEY, dictionaryKey)
             ).build()
-            logUrl(url)
-
-            val response: HttpResponse = client.get(url)
-            logger.debug { "status: ${response.status}" }
-
-            result(response)
+            get(url)
         }
 
-    suspend fun lookup(lang: String, text: String): RequestState<Lookup> =
+    suspend fun lookup(lang: String, text: String): DictionaryResponse<Lookup> =
         withContext(Dispatchers.IO) {
             val url = URLBuilder(
                 protocol = PROTOCOL,
                 host = HOST,
                 pathSegments = LOOKUP_PARAMS,
-                parameters = parametersOf("key", dictionaryKey)
+                parameters = parametersOf(KEY, dictionaryKey)
                     .plus(parametersOf(LANG, lang))
                     .plus(parametersOf(TEXT, text))
             ).build()
-            logUrl(url)
-
-            val response: HttpResponse = client.get(url)
-            logger.debug { "status: ${response.status}" }
-
-            result(response)
+            get(url)
         }
 
-    private fun logUrl(url: Url) =
-        logger.debug { "url: $url".replace(KEY, "…") }
-
-    private suspend inline fun <reified T> result(response: HttpResponse): RequestState<T> =
-        when (response.status) {
-            HttpStatusCode.OK ->
-                RequestState.Success(response.body())
-            else ->
-                RequestState.Failure(DictionaryError.from(response.status))
+    private suspend inline fun <reified T> get(url: Url): DictionaryResponse<T> {
+        return try {
+            val response = client.get(url)
+            when (response.status) {
+                HttpStatusCode.OK -> {
+                    DictionaryResponse.Result(response.body())
+                }
+                else -> {
+                    val dictionaryError: DictionaryError = response.body()
+                    DictionaryResponse.Error(dictionaryError.message ?: "Http error code ${response.status}")
+                }
+            }
+        } catch (ex: Exception) {
+            DictionaryResponse.Error(ex.message ?: "Unknown error")
         }
+    }
 }

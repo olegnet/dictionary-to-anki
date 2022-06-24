@@ -16,34 +16,11 @@
 
 package net.oleg.app.dictionary
 
-import io.ktor.http.*
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-class DictionaryError private constructor(val code: Int, message: String) : Exception(message) {
-    companion object {
-        private const val BAD_REQUEST = 400
-        private const val INVALID_API_KEY = 401
-        private const val API_KEY_BLOCKED = 402
-        private const val DAILY_LIMIT_EXCEEDED = 403
-        private const val TEXT_SIZE_EXCEEDED = 413
-        private const val UNSUPPORTED_TRANSLATION_DIRECTION = 501
-
-        // FIXME messages
-        fun from(httpStatusCode: HttpStatusCode): DictionaryError =
-            when (val code = httpStatusCode.value) {
-                BAD_REQUEST ->
-                    DictionaryError(code, "Bad request")
-                INVALID_API_KEY ->
-                    DictionaryError(code, "Invalid API key")
-                API_KEY_BLOCKED ->
-                    DictionaryError(code, "API key has been blocked")
-                DAILY_LIMIT_EXCEEDED ->
-                    DictionaryError(code, "Exceeded the daily limit of requests")
-                TEXT_SIZE_EXCEEDED ->
-                    DictionaryError(code, "Text size exceeded")
-                UNSUPPORTED_TRANSLATION_DIRECTION ->
-                    DictionaryError(code, "Translation direction is not supported")
-                else ->
-                    DictionaryError(code, "Unknown error $code: ${httpStatusCode.description}")
-            }
-    }
-}
+@Serializable
+data class DictionaryError(
+    @SerialName("code") val code: Int? = null,
+    @SerialName("message") val message: String? = null
+)
