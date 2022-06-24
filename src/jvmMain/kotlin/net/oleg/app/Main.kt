@@ -29,8 +29,7 @@ import net.oleg.app.ui.App
 fun main() = application {
     val keys = Keys.load()
 
-    // FIXME disable logging
-    val client = Network.client(enableLogging = true)
+    val client = Network.client(enableLogging = false)
 
     val anki = Anki(client, keys.anki)
     val dictionary = Dictionary(client,
