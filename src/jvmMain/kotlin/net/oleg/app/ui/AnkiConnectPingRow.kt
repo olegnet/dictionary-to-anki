@@ -28,7 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import net.oleg.app.anki.Anki
-import net.oleg.app.anki.AnkiResponseState
+import net.oleg.app.anki.AnkiResponse
 
 @Composable
 fun ColumnScope.AnkiConnectPingRow(
@@ -36,17 +36,17 @@ fun ColumnScope.AnkiConnectPingRow(
 ) {
     val currentScope = rememberCoroutineScope()
 
-    var ankiConnectResponse by remember { mutableStateOf<AnkiResponseState<Any?>>(AnkiResponseState.Init) }
+    var ankiConnectResponse by remember { mutableStateOf<AnkiResponse<Any?>>(AnkiResponse.Init) }
     val message = when (val response = ankiConnectResponse) {
-        AnkiResponseState.Init -> ""
-        AnkiResponseState.Progress -> "Connecting to Anki..."
-        is AnkiResponseState.Result -> "Anki is available"
-        is AnkiResponseState.Error -> "Anki is not available: ${response.error}"
+        AnkiResponse.Init -> ""
+        AnkiResponse.Progress -> "Connecting to Anki..."
+        is AnkiResponse.Result -> "Anki is available"
+        is AnkiResponse.Error -> "Anki is not available: ${response.error}"
     }
 
     fun pingAnki() {
         currentScope.launch {
-            ankiConnectResponse = AnkiResponseState.Progress
+            ankiConnectResponse = AnkiResponse.Progress
             ankiConnectResponse = anki.requestPermission()
         }
     }

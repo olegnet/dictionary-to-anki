@@ -19,6 +19,7 @@ package net.oleg.app.anki
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -90,7 +91,7 @@ class Anki(
 
     private val logger = LoggerFactory.default.newLogger(Anki::class)
 
-    suspend fun requestPermission(): AnkiResponseState<Any?> =
+    suspend fun requestPermission(): AnkiResponse<Any?> =
         withContext(Dispatchers.IO) {
             try {
                 val response = client.request(url) {
@@ -100,27 +101,47 @@ class Anki(
                 when (response.status) {
                     HttpStatusCode.OK -> {
                         val responseJson: Response<Permission?> = response.body()
-                        logger.debug { "responseJson: $responseJson" }
+                        logger.debug { "json: $responseJson" }
 
                         if (responseJson.error.isNullOrEmpty() &&
                             responseJson.result?.permission == PERMISSION_GRANTED &&
-                            responseJson.result.version >= API_VERSION) {
-
-                            AnkiResponseState.Result(null)
+                            responseJson.result.version >= API_VERSION
+                        ) {
+                            AnkiResponse.Result(null)
                         } else {
-                            AnkiResponseState.Error(error = "Something wrong with Anki Connect response")
+                            AnkiResponse.Error(error = "Something wrong with Anki Connect response")
                         }
                     }
                     else ->
-                        AnkiResponseState.Error(error = "HTTP Error code ${response.status}")
+                        AnkiResponse.Error(error = "HTTP Error code ${response.status}")
                 }
             } catch (ex: Exception) {
                 logger.error { "requestPermission: $ex" }
-                AnkiResponseState.Error(error = ex.message ?: ex.stackTraceToString())
+                AnkiResponse.Error(error = ex.message ?: ex.stackTraceToString())
             }
         }
 
-    suspend fun addNote(deckName: String, modelName: String, front: String, back: String): Response<Long?> =
+    private suspend inline fun <reified T> processAnkiResponse(httpResponse: HttpResponse): AnkiResponse<T> =
+        when (httpResponse.status) {
+            HttpStatusCode.OK -> {
+                val response: Response<T> = httpResponse.body()
+                logger.debug { "json: $response" }
+                when {
+                    response.result != null ->
+                        AnkiResponse.Result(result = response.result)
+                    response.error != null ->
+                        AnkiResponse.Error(error = response.error)
+                    else ->
+                        throw RuntimeException("Unknown error: $response")
+                }
+            }
+            else -> {
+                logger.debug { "http code: ${httpResponse.status}" }
+                AnkiResponse.Error(error = "HTTP Error code ${httpResponse.status}")
+            }
+        }
+
+    suspend fun addNote(deckName: String, modelName: String, front: String, back: String): AnkiResponse<Long?> =
         withContext(Dispatchers.IO) {
             try {
                 val response = client.request(url) {
@@ -143,42 +164,24 @@ class Anki(
                         )
                     )
                 }
-                when (response.status) {
-                    HttpStatusCode.OK -> {
-                        val responseJson: Response<Long?> = response.body()
-                        logger.debug { "responseJson: $responseJson" }
-
-                        responseJson
-                    }
-                    else ->
-                        Response(error = "HTTP Error code ${response.status}")
-                }
+                processAnkiResponse(response)
             } catch (ex: Exception) {
                 logger.error { "addNote: $ex" }
-                Response(error = ex.message)
+                AnkiResponse.Error(error = ex.message ?: ex.stackTraceToString())
             }
         }
 
-    suspend fun getNames(action: String): Response<ItemNamesList> =
+    suspend fun getNames(action: String): AnkiResponse<ItemNamesList> =
         withContext(Dispatchers.IO) {
             try {
                 val response = client.request(url) {
                     contentType(ContentType.Application.Json)
                     setBody(Request(apiKey = apiKey, action = action, version = API_VERSION))
                 }
-                when (response.status) {
-                    HttpStatusCode.OK -> {
-                        val responseJson: Response<ItemNamesList> = response.body()
-                        logger.debug { "responseJson: $responseJson" }
-
-                        responseJson
-                    }
-                    else ->
-                        Response(error = "HTTP Error code ${response.status}")
-                }
+                processAnkiResponse(response)
             } catch (ex: Exception) {
                 logger.error { "getNames: $ex" }
-                Response(error = ex.message)
+                AnkiResponse.Error(error = ex.message ?: ex.stackTraceToString())
             }
         }
 }

@@ -27,9 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import net.oleg.app.anki.Anki
+import net.oleg.app.anki.AnkiResponse
 import net.oleg.app.anki.ItemNames
 import net.oleg.app.anki.ItemNamesList
-import net.oleg.app.anki.Response
 
 @Composable
 fun ColumnScope.ChooseItemNameRow(
@@ -42,11 +42,26 @@ fun ColumnScope.ChooseItemNameRow(
     val currentScope = rememberCoroutineScope()
 
     var itemName by remember { mutableStateOf(itemInitValue) }
-    var itemNamesResponse by remember { mutableStateOf<Response<ItemNamesList>>(Response()) }
+    var itemNamesResponse by remember { mutableStateOf<AnkiResponse<ItemNamesList>>(AnkiResponse.Init) }
 
-    fun getItemNames() {
-        currentScope.launch {
-            itemNamesResponse = anki.getNames(itemNames.name)
+    val message: String?
+    val itemNamesList: ItemNamesList?
+    when (val response = itemNamesResponse) {
+        AnkiResponse.Init -> {
+            message = null
+            itemNamesList = null
+        }
+        AnkiResponse.Progress -> {
+            message = "Progress..."
+            itemNamesList = null
+        }
+        is AnkiResponse.Result -> {
+            message = null
+            itemNamesList = response.result
+        }
+        is AnkiResponse.Error -> {
+            message = response.error
+            itemNamesList = null
         }
     }
 
@@ -63,15 +78,6 @@ fun ColumnScope.ChooseItemNameRow(
             text = header
         )
 
-        itemNamesResponse.error?.apply {
-            Text(
-                modifier = Modifier
-                    .wrapContentSize()
-                    .padding(8.dp),
-                text = this
-            )
-        }
-
         var expanded by remember { mutableStateOf(false) }
         Box(
             modifier = Modifier
@@ -82,7 +88,10 @@ fun ColumnScope.ChooseItemNameRow(
                     .wrapContentSize()
                     .padding(8.dp),
                 onClick = {
-                    getItemNames()
+                    currentScope.launch {
+                        itemNamesResponse = AnkiResponse.Progress
+                        itemNamesResponse = anki.getNames(itemNames.name)
+                    }
                     expanded = true
                 }
             ) {
@@ -92,7 +101,7 @@ fun ColumnScope.ChooseItemNameRow(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                itemNamesResponse.result?.forEach {
+                itemNamesList?.forEach {
                     DropdownMenuItem(onClick = {
                         itemName = it
                         updateSettings(it)
@@ -102,6 +111,15 @@ fun ColumnScope.ChooseItemNameRow(
                     }
                 }
             }
+        }
+
+        message?.apply {
+            Text(
+                modifier = Modifier
+                    .wrapContentSize()
+                    .padding(8.dp),
+                text = this
+            )
         }
     }
 }

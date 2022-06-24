@@ -16,13 +16,12 @@
 
 package net.oleg.app.anki
 
-sealed class AnkiResponseState<out T>{
+sealed class AnkiResponse<out T>{
+    object Init : AnkiResponse<Nothing>()
 
-    object Init : AnkiResponseState<Nothing>()
+    object Progress : AnkiResponse<Nothing>()
 
-    object Progress : AnkiResponseState<Nothing>()
+    class Result<out T>(val result: T) : AnkiResponse<T>()
 
-    class Result<out T>(val result: T) : AnkiResponseState<T>()
-
-    class Error(val error: String) : AnkiResponseState<Nothing>()
+    class Error(val error: String) : AnkiResponse<Nothing>()
 }

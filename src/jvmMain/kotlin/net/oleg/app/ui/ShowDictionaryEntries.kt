@@ -35,7 +35,7 @@ import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import net.oleg.app.anki.Anki
-import net.oleg.app.anki.Response
+import net.oleg.app.anki.AnkiResponse
 import net.oleg.app.dictionary.DictionaryEntry
 import net.oleg.app.settings.Settings
 import org.kodein.log.LoggerFactory
@@ -50,22 +50,26 @@ fun ColumnScope.ShowDictionaryEntries(
     entries: List<DictionaryEntry>,
 ) {
     val currentScope = rememberCoroutineScope()
-    var addNoteResult by remember { mutableStateOf<Response<Long?>>(Response()) }
+    var addNoteResponse by remember { mutableStateOf<AnkiResponse<Long?>>(AnkiResponse.Init) }
 
     val message: String
     val messageColor: Color
-
-    if (addNoteResult.result != null) {
-        message = "Added new note with id ${addNoteResult.result}"
-        messageColor = MaterialTheme.colors.secondaryVariant
-    } else {
-        val error = addNoteResult.error
-        if (error != null) {
-            message = "Anki: $error"
-            messageColor = MaterialTheme.colors.error
-        } else {
+    when (val response = addNoteResponse) {
+        AnkiResponse.Init -> {
             message = ""
             messageColor = Color.Transparent
+        }
+        AnkiResponse.Progress -> {
+            message = "Connecting to Anki..."
+            messageColor = Color.Transparent
+        }
+        is AnkiResponse.Result -> {
+            message = "Added new note with id ${response.result}"
+            messageColor = MaterialTheme.colors.secondaryVariant
+        }
+        is AnkiResponse.Error -> {
+            message = "Anki: ${response.error}"
+            messageColor = MaterialTheme.colors.error
         }
     }
 
@@ -92,7 +96,8 @@ fun ColumnScope.ShowDictionaryEntries(
         entries.forEach { dict ->
             ShowDictionaryEntry(dict) { front, back ->
                 currentScope.launch {
-                    addNoteResult = anki.addNote(settings.deckName, settings.modelName, front, back)
+                    addNoteResponse = AnkiResponse.Progress
+                    addNoteResponse = anki.addNote(settings.deckName, settings.modelName, front, back)
                 }
             }
         }
