@@ -55,6 +55,11 @@ fun ColumnScope.ShowDictionaryEntries(
     val currentScope = rememberCoroutineScope()
     var addNoteResult by remember { mutableStateOf<Response<Long?>>(Response()) }
 
+    val hoveredStateColor = MaterialTheme.colors.secondary
+    val focusedPressedStateColor = lerp(MaterialTheme.colors.secondary, Color(64, 64, 64), 0.3f)
+    val focusedUnpressedStateColor = MaterialTheme.colors.secondary
+    val unfocusedStateColor = MaterialTheme.colors.primary
+
     val message: String
     val messageColor: Color
 
@@ -125,19 +130,18 @@ fun ColumnScope.ShowDictionaryEntries(
         }
 
         dict.translations.forEach { translation ->
-            val keyPressedState = remember { mutableStateOf(false) }
             val interactionSource = remember { MutableInteractionSource() }
+            val keyPressedState = remember { mutableStateOf(false) }
+
+            // TODO restore lost focused state after hover
             val backgroundColor =
                 if (interactionSource.collectIsHoveredAsState().value) {
-                    MaterialTheme.colors.secondary
+                    hoveredStateColor
                 } else {
                     if (interactionSource.collectIsFocusedAsState().value) {
-                        if (keyPressedState.value)
-                            lerp(MaterialTheme.colors.secondary, Color(64, 64, 64), 0.3f)
-                        else
-                            MaterialTheme.colors.secondary
+                        if (keyPressedState.value) focusedPressedStateColor else focusedUnpressedStateColor
                     } else {
-                        MaterialTheme.colors.primary
+                        unfocusedStateColor
                     }
                 }
 
