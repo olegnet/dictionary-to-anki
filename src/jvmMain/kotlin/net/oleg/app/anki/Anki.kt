@@ -23,49 +23,8 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
-
-@Serializable
-data class Request(
-    @SerialName("key") val apiKey: String? = null,
-    @SerialName("action") val action: String,
-    @SerialName("version") val version: Int,
-    @SerialName("params") val params: Params? = null,
-)
-
-@Serializable
-data class Params(
-    @SerialName("note") val note: Note,
-)
-
-@Serializable
-data class Note(
-    @SerialName("deckName") val deckName: String,
-    @SerialName("modelName") val modelName: String,
-    @SerialName("fields") val fields: Fields,
-)
-
-@Serializable
-data class Fields(
-    @SerialName("Front") val front: String,
-    @SerialName("Back") val back: String,
-)
-
-@Serializable
-data class Response<T>(
-    @SerialName("result") val result: T? = null,
-    @SerialName("error") val error: String? = null,
-)
-
-@Serializable
-data class Permission(
-    @SerialName("permission") val permission: String,
-    @SerialName("requireApikey") val requireApiKey: Boolean,
-    @SerialName("version") val version: Int,
-)
 
 typealias ItemNamesList = List<String>
 
