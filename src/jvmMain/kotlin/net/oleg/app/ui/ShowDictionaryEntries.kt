@@ -16,9 +16,7 @@
 
 package net.oleg.app.ui
 
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -45,7 +43,6 @@ import org.kodein.log.newLogger
 
 private val logger = LoggerFactory.default.newLogger("net.oleg.app.ui", "ShowDictionaryEntriesKt")
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ColumnScope.ShowDictionaryEntries(
     anki: Anki,
@@ -55,32 +52,20 @@ fun ColumnScope.ShowDictionaryEntries(
     val currentScope = rememberCoroutineScope()
     var addNoteResult by remember { mutableStateOf<Response<Long?>>(Response()) }
 
-    val hoveredStateColor = MaterialTheme.colors.secondary
-    val focusedPressedStateColor = lerp(MaterialTheme.colors.secondary, Color(64, 64, 64), 0.3f)
-    val focusedUnpressedStateColor = MaterialTheme.colors.secondary
-    val unfocusedStateColor = MaterialTheme.colors.primary
-
     val message: String
     val messageColor: Color
 
-    // FIXME colors
     if (addNoteResult.result != null) {
-        message = "Added new note"
-        messageColor = Color.Green
+        message = "Added new note with id ${addNoteResult.result}"
+        messageColor = MaterialTheme.colors.secondaryVariant
     } else {
         val error = addNoteResult.error
         if (error != null) {
-            message = error
-            messageColor = Color.Red
+            message = "Anki: $error"
+            messageColor = MaterialTheme.colors.error
         } else {
             message = ""
             messageColor = Color.Transparent
-        }
-    }
-
-    fun addNote(front: String, back: String) {
-        currentScope.launch {
-            addNoteResult = anki.addNote(settings.deckName, settings.modelName, front, back)
         }
     }
 
@@ -92,35 +77,54 @@ fun ColumnScope.ShowDictionaryEntries(
     ) {
         Text(
             modifier = Modifier
-                .wrapContentSize()
-                .padding(start = 4.dp),
+                .fillMaxWidth()
+                .padding(start = 4.dp, top = 8.dp, bottom = 8.dp),
             text = message,
             color = messageColor
         )
     }
 
-    entries.forEach { dict ->
-        Row(
+    Column(
+        modifier = Modifier
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Top,
+    ) {
+        entries.forEach { dict ->
+            ShowDictionaryEntry(dict) { front, back ->
+                currentScope.launch {
+                    addNoteResult = anki.addNote(settings.deckName, settings.modelName, front, back)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ColumnScope.ShowDictionaryEntryHeader(
+    dict: DictionaryEntry,
+) {
+    Row(
+        modifier = Modifier
+            .wrapContentSize()
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(space = 4.dp),
+    ) {
+        Text(
             modifier = Modifier
                 .wrapContentSize()
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(space = 4.dp),
-        ) {
+                .padding(start = 4.dp),
+            text = dict.text
+        )
+        if (!dict.transcription.isNullOrEmpty()) {
             Text(
                 modifier = Modifier
                     .wrapContentSize()
-                    .padding(start = 4.dp),
-                text = dict.text
+                    .padding(horizontal = 4.dp),
+                color = Color.LightGray,
+                text = "[${dict.transcription}]"
             )
-            if (!dict.transcription.isNullOrEmpty()) {
-                Text(
-                    modifier = Modifier
-                        .wrapContentSize()
-                        .padding(horizontal = 4.dp),
-                    color = Color.LightGray,
-                    text = "[${dict.transcription}]"
-                )
-            }
+        }
+        if (!dict.partOfSpeech.isNullOrEmpty()) {
             Text(
                 modifier = Modifier
                     .wrapContentSize(),
@@ -128,60 +132,74 @@ fun ColumnScope.ShowDictionaryEntries(
                 text = dict.partOfSpeech
             )
         }
+    }
+}
 
-        dict.translations.forEach { translation ->
-            val interactionSource = remember { MutableInteractionSource() }
-            val keyPressedState = remember { mutableStateOf(false) }
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun ColumnScope.ShowDictionaryEntry(
+    dict: DictionaryEntry,
+    addNote: (String, String) -> Unit,
+) {
+    val hoveredStateColor = MaterialTheme.colors.secondary
+    val focusedPressedStateColor = lerp(MaterialTheme.colors.secondary, Color(64, 64, 64), 0.3f)
+    val focusedUnpressedStateColor = MaterialTheme.colors.secondary
+    val unfocusedStateColor = MaterialTheme.colors.primary
 
-            // TODO restore lost focused state after hover
-            val backgroundColor =
-                if (interactionSource.collectIsHoveredAsState().value) {
-                    hoveredStateColor
+    ShowDictionaryEntryHeader(dict)
+
+    dict.translations.forEach { translation ->
+        val interactionSource = remember { MutableInteractionSource() }
+        val keyPressedState = remember { mutableStateOf(false) }
+
+        // FIXME restore lost focused state after hover
+        val backgroundColor =
+            if (interactionSource.collectIsHoveredAsState().value) {
+                hoveredStateColor
+            } else {
+                if (interactionSource.collectIsFocusedAsState().value) {
+                    if (keyPressedState.value) focusedPressedStateColor else focusedUnpressedStateColor
                 } else {
-                    if (interactionSource.collectIsFocusedAsState().value) {
-                        if (keyPressedState.value) focusedPressedStateColor else focusedUnpressedStateColor
-                    } else {
-                        unfocusedStateColor
-                    }
+                    unfocusedStateColor
                 }
+            }
 
-            Box(
-                modifier = Modifier
-                    .padding(start = 32.dp, top = 8.dp, bottom = 8.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .fillMaxWidth()
-                    .background(backgroundColor)
-                    .onPreviewKeyEvent {
-                        if (it.key == Key.Enter || it.key == Key.Spacebar) {
-                            when (it.type) {
-                                KeyEventType.KeyDown -> {
-                                    keyPressedState.value = true
-                                }
-                                KeyEventType.KeyUp -> {
-                                    keyPressedState.value = false
-                                    logger.debug { "onPreviewKeyEvent: ${dict.text} -> ${translation.text}" }
-                                    addNote(dict.text, translation.text)
-                                }
+        Box(
+            modifier = Modifier
+                .padding(start = 32.dp, top = 8.dp, bottom = 8.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .fillMaxWidth()
+                .background(backgroundColor)
+                .onPreviewKeyEvent {
+                    if (it.key == Key.Enter || it.key == Key.Spacebar) {
+                        when (it.type) {
+                            KeyEventType.KeyDown -> {
+                                keyPressedState.value = true
+                            }
+                            KeyEventType.KeyUp -> {
+                                keyPressedState.value = false
+                                logger.debug { "onPreviewKeyEvent: ${dict.text} -> ${translation.text}" }
+                                addNote(dict.text, translation.text)
                             }
                         }
-                        false
                     }
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = LocalIndication.current,
-                        onClick = {
-                            logger.debug { "onClick: ${dict.text} -> ${translation.text}" }
-                            addNote(dict.text, translation.text)
-                        },
-                    ),
-                contentAlignment = Alignment.TopStart
-            ) {
-                Text(
-                    modifier = Modifier
-                        .padding(8.dp),
-                    text = translation.text,
-                )
-            }
+                    false
+                }
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = LocalIndication.current,
+                    onClick = {
+                        logger.debug { "onClick: ${dict.text} -> ${translation.text}" }
+                        addNote(dict.text, translation.text)
+                    },
+                ),
+            contentAlignment = Alignment.TopStart
+        ) {
+            Text(
+                modifier = Modifier
+                    .padding(8.dp),
+                text = translation.text,
+            )
         }
     }
 }

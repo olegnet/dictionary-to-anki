@@ -20,12 +20,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Translations(
+data class Translation(
     @SerialName("text") val text: String,
-    @SerialName("pos") val partOfSpeech: String,
-    // val gen: String? = null,
-    // val fr: Int? = null,
-    //  syn     Array of synonyms
-    //  mean    Array of meanings
-    //  ex	    Array of examples
 )

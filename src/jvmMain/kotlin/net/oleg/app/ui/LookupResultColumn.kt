@@ -42,8 +42,7 @@ fun RowScope.LookupResultColumn(
             .width(0.dp)
             .weight(1f)
             .background(color = Color.White)
-            .padding(8.dp)
-            .verticalScroll(rememberScrollState()),
+            .padding(8.dp),
         verticalArrangement = Arrangement.Top,
     ) {
         when (lookupResult) {
