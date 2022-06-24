@@ -21,12 +21,14 @@ package net.oleg.app.settings
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import java.io.File
+import java.io.FileNotFoundException
 
 @Serializable
 data class SettingsData(
@@ -69,7 +71,11 @@ class Settings private constructor(
             val path = overridePath ?: "${System.getProperty("user.home")}/$SETTINGS_PATH"
             logger.debug { "path: $path" }
 
-            val data = Json.decodeFromStream<SettingsData>(File(path).inputStream())
+            val data = try {
+                Json.decodeFromStream<SettingsData>(File(path).inputStream())
+            } catch (ex: FileNotFoundException) {
+                Json.decodeFromString("{}")
+            }
 
             return Settings(path, data)
         }
