@@ -19,6 +19,7 @@ package net.oleg.app.settings
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import java.io.File
+import java.io.IOException
 import java.util.*
 
 class Keys private constructor(
@@ -29,24 +30,42 @@ class Keys private constructor(
 ) {
     companion object {
         private const val KEYS_PATH = ".config/dict2anki/keys.properties"
+        private const val ANKI_KEY = "anki"
+        const val DICTIONARY_KEY = "dictionary"
+        const val DICTIONARY_API_URL = "https://yandex.com/dev/dictionary/"
+
+        val defaultPath = "${System.getProperty("user.home")}/$KEYS_PATH"
 
         private val logger = LoggerFactory.default.newLogger(Keys::class)
+
+        fun createPropertyFile() {
+            val file = File(defaultPath)
+            if (file.exists()) {
+                return
+            }
+            file.parentFile.mkdirs()
+            file.writeText("# Enter your keys here\n$DICTIONARY_KEY=\n$ANKI_KEY=\n")
+        }
 
         fun load(overridePath: String? = null): Keys {
             val properties = loadProperties(overridePath)
             return Keys(
-                dictionary = properties.getProperty("dictionary"),
-                anki = properties.getProperty("anki")
+                dictionary = properties.getProperty(DICTIONARY_KEY),
+                anki = properties.getProperty(ANKI_KEY)
             )
         }
 
         private fun loadProperties(overridePath: String?): Properties {
-            val path = overridePath ?: "${System.getProperty("user.home")}/$KEYS_PATH"
+            val path = overridePath ?: defaultPath
             logger.debug { "path: $path" }
 
             val properties = Properties()
-            properties.load(File(path).inputStream())
-            logger.debug { "properties found: " + properties.keys.joinToString(separator = ", ") }
+            try {
+                properties.load(File(path).inputStream())
+                logger.debug { "properties found: " + properties.keys.joinToString(separator = ", ") }
+            } catch (ex: IOException) {
+                logger.error(ex)
+            }
 
             return properties
         }

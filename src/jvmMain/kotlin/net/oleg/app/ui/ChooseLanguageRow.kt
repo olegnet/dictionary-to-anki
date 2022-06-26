@@ -26,8 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import net.oleg.app.dictionary.Dictionary
-import net.oleg.app.dictionary.Languages
 import net.oleg.app.dictionary.DictionaryResponse
+import net.oleg.app.dictionary.Languages
 import net.oleg.app.settings.Settings
 
 @Composable

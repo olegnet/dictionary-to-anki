@@ -20,11 +20,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.ApplicationScope
 import kotlinx.coroutines.launch
 import net.oleg.app.anki.Anki
 import net.oleg.app.anki.ItemNames
@@ -87,9 +94,37 @@ fun App(
                 ChooseItemNameRow(anki, ItemNames.modelNames, "Model name", settings.modelName) {
                     settings.modelName = it
                 }
+
+                OpenSetupDialogRow()
             }
 
             LookupResultColumn(anki, settings, lookupResult)
         }
+    }
+}
+
+@Composable
+private fun OpenSetupDialogRow() {
+    var isDialogOpen by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier
+            .wrapContentHeight()
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            modifier = Modifier
+                .wrapContentSize()
+                .padding(8.dp),
+            text = "Setup"
+        )
+        IconButton(onClick = { isDialogOpen = true }) {
+            Icon(imageVector = Icons.Filled.Settings, contentDescription = "Open setup dialog")
+        }
+    }
+
+    if (isDialogOpen) {
+        SetupDialog { isDialogOpen = false }
     }
 }

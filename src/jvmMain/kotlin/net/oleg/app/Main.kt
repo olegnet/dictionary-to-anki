@@ -16,6 +16,7 @@
 
 package net.oleg.app
 
+import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -25,15 +26,22 @@ import net.oleg.app.dictionary.Dictionary
 import net.oleg.app.settings.Keys
 import net.oleg.app.settings.Settings
 import net.oleg.app.ui.App
+import net.oleg.app.ui.SetupDialog
 
 fun main() = application {
     val keys = Keys.load()
 
+    if (keys.dictionary == null) {
+        MaterialTheme {
+            SetupDialog { exitApplication() }
+        }
+        return@application
+    }
+
     val client = Network.client(enableLogging = false)
 
     val anki = Anki(client, keys.anki)
-    val dictionary = Dictionary(client,
-        keys.dictionary ?: throw RuntimeException("Unable to found key for dictionary API"))
+    val dictionary = Dictionary(client, keys.dictionary)
 
     val settings = Settings.load()
 
@@ -43,7 +51,7 @@ fun main() = application {
             placement = WindowPlacement.Floating,
             position = WindowPosition(alignment = Alignment.Center)
         ),
-        title = "Dictionary",
+        title = "Dictionary to Anki",
         onCloseRequest = {
             client.close()
             exitApplication()
