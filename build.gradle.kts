@@ -4,7 +4,7 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 plugins {
     kotlin("multiplatform")
     id("org.jetbrains.compose")
-    kotlin("plugin.serialization").version("1.6.21")    // FIXME version
+    kotlin("plugin.serialization").version("1.6.21")
 }
 
 group = "net.oleg"
@@ -53,8 +53,11 @@ compose.desktop {
         mainClass = "net.oleg.app.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "lang-card"
+            packageName = "Dictionary to Anki"
             packageVersion = "1.0.0"
+            description = "Small useful tool for adding new words to Anki application"
+            copyright = "Copyright 2022 Oleg Okhotnikov"
+            licenseFile.set(project.file("LICENSE"))
         }
     }
 }
