@@ -58,6 +58,9 @@ compose.desktop {
             description = "Small useful tool for adding new words to Anki application"
             copyright = "Copyright 2022 Oleg Okhotnikov"
             licenseFile.set(project.file("LICENSE"))
+            macOS {
+                iconFile.set(project.file("dictionary.icns"))
+            }
         }
     }
 }

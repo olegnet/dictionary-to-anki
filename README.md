@@ -40,3 +40,11 @@ defaults write org.qt-project.Qt.QtWebEngineCore NSAppSleepDisabled -bool true
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
+
+## MacOS icon
+
+Icon art by [oviotti](https://www.deviantart.com/oviotti) 
+
+[Iconpack](https://www.deviantart.com/oviotti/art/Tile-Icons-A-macOS-Iconpack-848741448)
+
+[Download icons](https://drive.google.com/drive/folders/1ADQuiXAizrRJUoevCz3ZHRXeuBh4FTWe)
