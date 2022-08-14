@@ -1,19 +1,29 @@
 import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        google()
+        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    }
+}
+
 plugins {
     kotlin("multiplatform")
     id("org.jetbrains.compose")
-    kotlin("plugin.serialization").version("1.6.21")
+    kotlin("plugin.serialization")
 }
 
 group = "net.oleg"
 version = "1.0-SNAPSHOT"
 
 repositories {
-    google()
+    mavenLocal()
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    google()
 }
 
 kotlin {
@@ -23,25 +33,36 @@ kotlin {
         }
         withJava()
     }
+
+    @Suppress("LocalVariableName")
     sourceSets {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
         val jvmMain by getting {
             dependencies {
+                val kotlin_version: String by project
                 val ktor_version: String by project
+                val coroutines_version: String by project
+                val kodein_version: String by project
+                val kotlinx_serialization_version: String by project
 
                 implementation(compose.desktop.currentOs)
-                implementation("org.kodein.log:kodein-log:0.11.1")
-                implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.0")
-                implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.3")
+
+                implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
+                implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinx_serialization_version")
+
                 implementation("io.ktor:ktor-client-core:$ktor_version")
                 implementation("io.ktor:ktor-client-cio:$ktor_version")
                 implementation("io.ktor:ktor-client-serialization:$ktor_version")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
                 implementation("io.ktor:ktor-client-logging:$ktor_version")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
+
+                implementation("org.kodein.log:kodein-log:$kodein_version")
             }
         }
         val jvmTest by getting
