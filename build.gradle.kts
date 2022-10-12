@@ -1,4 +1,3 @@
-import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 buildscript {
@@ -44,7 +43,7 @@ kotlin {
                 val kotlin_version: String by project
                 val ktor_version: String by project
                 val coroutines_version: String by project
-                val kodein_version: String by project
+                val kodein_log_version: String by project
                 val kotlinx_serialization_version: String by project
 
                 implementation(compose.desktop.currentOs)
@@ -62,7 +61,7 @@ kotlin {
                 implementation("io.ktor:ktor-client-logging:$ktor_version")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
 
-                implementation("org.kodein.log:kodein-log:$kodein_version")
+                implementation("org.kodein.log:kodein-log:$kodein_log_version")
             }
         }
         val jvmTest by getting
